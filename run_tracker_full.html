@@ -92,6 +92,7 @@
     border-collapse: collapse;
     font-size: 13px;
     table-layout: fixed;
+    max-width: 100%;
   }
 
   colgroup col.c-date  { width: 80px; }
@@ -104,7 +105,7 @@
   colgroup col.c-dlfl  { width: 96px; }
   colgroup col.c-dlrt  { width: 100px; }
   colgroup col.c-bw    { width: 100px; }
-  colgroup col.c-notes { }
+  colgroup col.c-notes { width: 220px; }
 
   thead th {
     background: #f0eeea;
@@ -179,7 +180,7 @@
   .date-cell  { font-family: var(--mono); font-size: 13px; color: var(--text); }
   .ord        { display: block; font-size: 13px; color: var(--text-3); margin-top: 2px; }
   .focus-cell { color: var(--text-2); font-size: 13px; line-height: 1.5; }
-  .notes-cell { color: var(--text-3); font-size: 13px; line-height: 1.6; }
+  .notes-cell { color: var(--text-3); font-size: 13px; line-height: 1.6; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 
   .empty { text-align: center; padding: 40px; color: var(--text-3); font-size: 16px; }
 </style>
