@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staging performance run tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #f7f6f2;
+    --surface:   #ffffff;
+    --border:    #e2e0d8;
+    --border-strong: #c8c6bc;
+    --text:      #1a1916;
+    --text-2:    #4a4844;
+    --text-3:    #888580;
+    --accent:    #1a5fb4;
+    --accent-bg: #e8f0fb;
+    --ok:        #1a7a3c;
+    --ok-bg:     #e6f4ec;
+    --warn:      #7a5200;
+    --warn-bg:   #fef3d0;
+    --err:       #9b1c1c;
+    --err-bg:    #fde8e8;
+    --baseline-bg:   #f0eeea;
+    --baseline-border: #c8c6bc;
+    --mono:      "JetBrains Mono", "Fira Mono", "Consolas", monospace;
+    --sans:      -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --radius:    6px;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 28px 24px 56px;
+    min-height: 100vh;
+  }
+
+  header { margin-bottom: 22px; }
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  header p { font-size: 14px; color: var(--text-3); }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .controls select,
+  .controls input {
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px 10px;
+    height: 34px;
+    outline: none;
+    transition: border-color .12s;
+  }
+  .controls select:focus,
+  .controls input:focus { border-color: var(--accent); }
+  .controls input[type=text] { width: 220px; }
+  .count {
+    margin-left: auto;
+    font-size: 14px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tbl-wrap {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    table-layout: fixed;
+  }
+
+  colgroup col.c-date  { width: 80px; }
+  colgroup col.c-net   { width: 110px; }
+  colgroup col.c-focus { width: 140px; }
+  colgroup col.c-dur   { width: 72px; }
+  colgroup col.c-batch { width: 82px; }
+  colgroup col.c-conn  { width: 100px; }
+  colgroup col.c-dlok  { width: 96px; }
+  colgroup col.c-dlfl  { width: 96px; }
+  colgroup col.c-dlrt  { width: 100px; }
+  colgroup col.c-bw    { width: 100px; }
+  colgroup col.c-notes { }
+
+  thead th {
+    background: #f0eeea;
+    color: var(--text-3);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: normal;
+    line-height: 1.35;
+    vertical-align: top;
+    text-align: center;
+  }
+  thead th.num { text-align: center; }
+  thead th:hover { color: var(--text); background: #eae8e3; }
+  thead th.sorted { color: var(--accent); }
+  thead th .arr { display: inline-block; margin-left: 3px; opacity: .35; font-size: 10px; }
+  thead th.sorted .arr { opacity: 1; }
+
+  tbody tr { border-bottom: 1px solid var(--border); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover td { background: #faf9f6; }
+  tbody td { padding: 8px 10px; vertical-align: top; color: var(--text-2); }
+  tbody td.num { text-align: left; font-variant-numeric: tabular-nums; }
+
+  tbody tr.baseline td {
+    background: var(--baseline-bg);
+  }
+  tbody tr.baseline:hover td { background: #eae8e3; }
+  tbody tr.baseline td.date-cell { color: var(--text-3); }
+
+  .baseline-divider td {
+    padding: 0;
+    height: 3px;
+    background: var(--baseline-border);
+    border-bottom: none;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: .01em;
+    white-space: nowrap;
+  }
+  .ok   { background: var(--ok-bg);   color: var(--ok);   }
+  .warn { background: var(--warn-bg); color: var(--warn); }
+  .err  { background: var(--err-bg);  color: var(--err);  }
+  .net  { background: var(--accent-bg); color: var(--accent); font-family: var(--mono); font-size: 13px; }
+  .bl-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    background: var(--baseline-border);
+    color: var(--text-3);
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .date-cell  { font-family: var(--mono); font-size: 13px; color: var(--text); }
+  .ord        { display: block; font-size: 13px; color: var(--text-3); margin-top: 2px; }
+  .focus-cell { color: var(--text-2); font-size: 13px; line-height: 1.5; }
+  .notes-cell { color: var(--text-3); font-size: 13px; line-height: 1.6; }
+
+  .empty { text-align: center; padding: 40px; color: var(--text-3); font-size: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Staging — 10K agent performance runs</h1>
+  <p>Networks: Cjbex1Pj7a · QaWL9HOEOx &nbsp;·&nbsp; 4 runs · June 2026 &nbsp;·&nbsp; Earliest run pinned as baseline</p>
+</header>
+
+<div class="controls">
+  <select id="net-filter">
+    <option value="">All networks</option>
+    <option>Cjbex1Pj7a</option>
+    <option>QaWL9HOEOx</option>
+  </select>
+  <select id="sort-col">
+    <option value="date">Sort: date</option>
+    <option value="batch">Sort: batch success %</option>
+    <option value="conn">Sort: connection failures</option>
+    <option value="dlrate">Sort: download success %</option>
+    <option value="bw">Sort: peak throughput</option>
+    <option value="dur">Sort: duration</option>
+  </select>
+  <select id="sort-dir">
+    <option value="desc">Newest first</option>
+    <option value="asc">Oldest first</option>
+  </select>
+  <input type="text" id="search" placeholder="Search notes / focus…">
+  <span class="count" id="count"></span>
+</div>
+
+<div class="tbl-wrap">
+  <table>
+    <colgroup>
+      <col class="c-date"><col class="c-net"><col class="c-focus">
+      <col class="c-dur"><col class="c-batch"><col class="c-conn">
+      <col class="c-dlok"><col class="c-dlfl"><col class="c-dlrt">
+      <col class="c-bw"><col class="c-notes">
+    </colgroup>
+    <thead>
+      <tr>
+        <th data-key="date">Date<span class="arr">↕</span></th>
+        <th>Network</th>
+        <th>Run focus</th>
+        <th class="num" data-key="dur">Duration<span class="arr">↕</span></th>
+        <th class="num" data-key="batch">Batch<br>success<span class="arr">↕</span></th>
+        <th class="num" data-key="conn">Connection<br>failures<span class="arr">↕</span></th>
+        <th class="num" data-key="dlok">Downloads<br>succeeded<span class="arr">↕</span></th>
+        <th class="num" data-key="dlfl">Downloads<br>failed<span class="arr">↕</span></th>
+        <th class="num" data-key="dlrate">Download<br>success %<span class="arr">↕</span></th>
+        <th class="num" data-key="bw">Peak<br>throughput<span class="arr">↕</span></th>
+        <th style="text-align:left">Notes</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script>
+const runs = [
+  {
+    date:"2026-06-10", ord:1, net:"QaWL9HOEOx",
+    focus:"Run with increased downloads",
+    dur:3.0, batch:84.3, connFail:3788,
+    dlOk:36966, dlFail:3069, bw:600,
+    notes:"Throughput ceiling unchanged at ~600 Mb/s — goal not achieved. Server metrics confirm bottleneck is not CPU or memory."
+  },
+  {
+    date:"2026-06-23", ord:1, net:"Cjbex1Pj7a",
+    focus:"Load sharing examination",
+    dur:1.9, batch:99.4, connFail:5443,
+    dlOk:8830, dlFail:4567, bw:300,
+    notes:"ECMP imbalance identified as primary blocker. 3 failure modes: tunnel timeout, data plane black hole (RTNETLINK), download timeout. Only 19/64 gateways receiving meaningful load. Capacity not exhausted (29% utilisation)."
+  },
+  {
+    date:"2026-06-23", ord:2, net:"Cjbex1Pj7a",
+    focus:"Load sharing improvement",
+    dur:2.067, batch:98.1, connFail:199,
+    dlOk:48269, dlFail:98, bw:1250,
+    notes:"Spontaneous recovery — no config change. All 8 tunnels active. ECMP 6:1 ratio."
+  },
+  {
+    date:"2026-06-25", ord:1, net:"Cjbex1Pj7a",
+    focus:"Edge data analysis included",
+    dur:2.1, batch:96.4, connFail:514,
+    dlOk:44717, dlFail:674, bw:1150,
+    notes:"ECMP ~6:1, T103 dominant. Edge infra fully confirmed via Datadog."
+  },
+];
+
+// Baseline = earliest run (lowest date+ord)
+const baselineKey = runs.reduce((a,b) =>
+  (a.date+a.ord) < (b.date+b.ord) ? a : b
+);
+const BASELINE_ID = baselineKey.date + baselineKey.ord;
+
+function dlRate(r){ return r.dlOk / (r.dlOk + r.dlFail) * 100; }
+function cls(val, ok, warn){ return val >= ok ? 'ok' : val >= warn ? 'warn' : 'err'; }
+function bwCls(bw)  { return bw >= 1000 ? 'ok' : bw >= 600 ? 'warn' : 'err'; }
+function connCls(r) { const p = r.connFail/10000*100; return p < 5 ? 'ok' : p < 20 ? 'warn' : 'err'; }
+function batchCls(b){ return cls(b, 98, 90); }
+function dlCls(d)   { return cls(d, 98, 85); }
+function fmt(n)     { return n.toLocaleString('en-US'); }
+function isBaseline(r){ return (r.date+r.ord) === BASELINE_ID; }
+
+const sortMap = {
+  date:   r => r.date + String(r.ord).padStart(2,'0'),
+  batch:  r => r.batch,
+  conn:   r => r.connFail,
+  dlrate: r => dlRate(r),
+  bw:     r => r.bw,
+  dur:    r => r.dur,
+  dlok:   r => r.dlOk,
+  dlfl:   r => r.dlFail,
+};
+
+let sortCol = 'date', sortDir = 'desc';
+
+function rowHtml(r, isBase){
+  const dr = dlRate(r);
+  const dateLabel = r.date.slice(5,10) + (r.ord > 1 ? `<span class="ord">run ${r.ord}</span>` : '');
+  const baseTag = isBase ? '<span class="bl-pill">baseline</span>' : '';
+  return `<tr class="${isBase ? 'baseline' : ''}">
+    <td class="date-cell">${dateLabel}</td>
+    <td><span class="badge net">${r.net}</span></td>
+    <td class="focus-cell">${r.focus}${baseTag}</td>
+    <td class="num">${r.dur.toFixed(1)}h</td>
+    <td class="num"><span class="badge ${batchCls(r.batch)}">${r.batch.toFixed(1)}%</span></td>
+    <td class="num"><span class="badge ${connCls(r)}">${fmt(r.connFail)}</span></td>
+    <td class="num">${fmt(r.dlOk)}</td>
+    <td class="num">${fmt(r.dlFail)}</td>
+    <td class="num"><span class="badge ${dlCls(dr)}">${dr.toFixed(1)}%</span></td>
+    <td class="num"><span class="badge ${bwCls(r.bw)}">${fmt(r.bw)} Mb/s</span></td>
+    <td class="notes-cell">${r.notes}</td>
+  </tr>`;
+}
+
+function render(){
+  const net = document.getElementById('net-filter').value;
+  const col = document.getElementById('sort-col').value;
+  const dir = document.getElementById('sort-dir').value;
+  const q   = document.getElementById('search').value.toLowerCase();
+  sortCol = col; sortDir = dir;
+
+  document.querySelectorAll('thead th').forEach(th => {
+    th.classList.remove('sorted');
+    const k = th.dataset.key;
+    if(k === col) th.classList.add('sorted');
+    if(th.querySelector('.arr')){
+      th.querySelector('.arr').textContent = k === col ? (dir==='asc' ? '↑' : '↓') : '↕';
+    }
+  });
+
+  const baseline = runs.find(r => isBaseline(r));
+  const rest = runs.filter(r => !isBaseline(r));
+
+  // Filter baseline separately (it shows if it passes the network filter;
+  // text search also applies to it)
+  const baselineVisible = baseline &&
+    (!net || baseline.net === net) &&
+    (!q || (baseline.notes+' '+baseline.focus).toLowerCase().includes(q));
+
+  let data = rest.filter(r => {
+    if(net && r.net !== net) return false;
+    if(q && !(r.notes+' '+r.focus).toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const fn = sortMap[col] || sortMap.date;
+  data.sort((a,b) => dir === 'asc' ? (fn(a) > fn(b) ? 1 : -1) : (fn(a) < fn(b) ? 1 : -1));
+
+  const visibleTotal = data.length + (baselineVisible ? 1 : 0);
+  document.getElementById('count').textContent = `${visibleTotal} of ${runs.length} runs`;
+
+  const tbody = document.getElementById('tbody');
+
+  if(!visibleTotal){
+    tbody.innerHTML = `<tr><td colspan="11" class="empty">No runs match the current filters.</td></tr>`;
+    return;
+  }
+
+  let html = '';
+  if(baselineVisible){
+    html += rowHtml(baseline, true);
+    if(data.length){
+      html += `<tr class="baseline-divider"><td colspan="11"></td></tr>`;
+    }
+  }
+  html += data.map(r => rowHtml(r, false)).join('');
+  tbody.innerHTML = html;
+}
+
+document.querySelectorAll('thead th[data-key]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = th.dataset.key;
+    if(sortCol === k){
+      document.getElementById('sort-dir').value = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      document.getElementById('sort-col').value = k;
+      document.getElementById('sort-dir').value = 'desc';
+    }
+    render();
+  });
+});
+
+['net-filter','sort-col','sort-dir'].forEach(id =>
+  document.getElementById(id).addEventListener('change', render)
+);
+document.getElementById('search').addEventListener('input', render);
+
+render();
+</script>
+</body>
+</html>
