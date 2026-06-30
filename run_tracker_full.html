@@ -189,7 +189,7 @@
 
 <header>
   <h1>Staging — 10K agent performance runs</h1>
-  <p>Networks: Cjbex1Pj7a · QaWL9HOEOx &nbsp;·&nbsp; 4 runs · June 2026 &nbsp;·&nbsp; Earliest run pinned as baseline</p>
+  <p>Networks: Cjbex1Pj7a · QaWL9HOEOx &nbsp;·&nbsp; 7 runs · May–June 2026 &nbsp;·&nbsp; Earliest run pinned as baseline</p>
 </header>
 
 <div class="controls">
@@ -243,6 +243,13 @@
 
 <script>
 const runs = [
+  {
+    date:"2026-05-26", ord:1, net:"QaWL9HOEOx",
+    focus:"MQueue fix validation",
+    dur:1.583, batch:92.0, connFail:1460,
+    dlOk:24113, dlFail:4065, bw:750,
+    notes:"System functional post-fix. Throughput consistent (~550 Mb/s sustained). Connection failures root cause identified — WireGuard handshake timeout."
+  },
   {
     date:"2026-06-04", ord:1, net:"QaWL9HOEOx",
     focus:"Users per GW run",
