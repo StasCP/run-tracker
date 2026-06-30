@@ -178,26 +178,6 @@
 </header>
 
 <div class="card">
-  <div class="controls">
-    <div class="control-group">
-      <label class="group-label">Series</label>
-      <div class="checkboxes" id="series-controls"></div>
-    </div>
-    <div class="control-group">
-      <label class="group-label">Date range</label>
-      <div class="date-pills">
-        <button class="pill" data-range="10" onclick="setRange(this)">Last 10 runs</button>
-        <button class="pill" data-range="30" onclick="setRange(this)">Last 30 days</button>
-        <button class="pill active" data-range="all" onclick="setRange(this)">All</button>
-      </div>
-    </div>
-  </div>
-  <div class="chart-wrap">
-    <canvas id="trendChart"></canvas>
-  </div>
-</div>
-
-<div class="card">
   <div class="section-title">Run summary — regressed metrics highlighted (any field)</div>
   <table id="summary-table">
     <thead>
@@ -215,6 +195,26 @@
     </thead>
     <tbody id="summary-body"></tbody>
   </table>
+</div>
+
+<div class="card">
+  <div class="controls">
+    <div class="control-group">
+      <label class="group-label">Series</label>
+      <div class="checkboxes" id="series-controls"></div>
+    </div>
+    <div class="control-group">
+      <label class="group-label">Date range</label>
+      <div class="date-pills">
+        <button class="pill" data-range="10" onclick="setRange(this)">Last 10 runs</button>
+        <button class="pill" data-range="30" onclick="setRange(this)">Last 30 days</button>
+        <button class="pill active" data-range="all" onclick="setRange(this)">All</button>
+      </div>
+    </div>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="trendChart"></canvas>
+  </div>
 </div>
 
 <script>
