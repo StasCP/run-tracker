@@ -244,39 +244,46 @@
 <script>
 const runs = [
   {
+    date:"2026-06-04", ord:1, net:"QaWL9HOEOx",
+    focus:"Users per GW run",
+    dur:1.5, batch:98.4, connFail:2865,
+    dlOk:22934, dlFail:7313, bw:580,
+    notes:"Conn. duration 3,600s for clear users-per-GW reading. WireGuard IP pool exhaustion caused 29.1% conn failures. HTTPS 60s timeout caused 24.2% DL failures. Strong throughput on connected agents."
+  },
+  {
     date:"2026-06-08", ord:1, net:"QaWL9HOEOx",
     focus:"Multiple users per GW readings",
     dur:2.2, batch:99.4, connFail:3394,
     dlOk:23625, dlFail:2087, bw:600,
-    notes:"Users per GW readings introduced. 3,600s agent connection duration. GW cap enforced — 253 soft ceiling. 1 GW outlier (415 users) — self-corrected. Conn. failures & DL failures under investigation. Tunnel traffic metrics inconsistency — under investigation."
+    notes:"GW cap 253 soft ceiling. 1 GW outlier (415 users) self-corrected. Conn. & DL failures under investigation. Tunnel metrics inconsistency under investigation."
   },
   {
     date:"2026-06-10", ord:1, net:"QaWL9HOEOx",
     focus:"Run with increased downloads",
     dur:3.0, batch:84.3, connFail:3788,
     dlOk:36966, dlFail:3069, bw:600,
-    notes:"Throughput ceiling unchanged at ~600 Mb/s — goal not achieved. Server metrics confirm bottleneck is not CPU or memory."
+    notes:"Throughput ceiling unchanged at ~600 Mb/s. Bottleneck is not CPU or memory."
   },
   {
     date:"2026-06-23", ord:1, net:"Cjbex1Pj7a",
     focus:"Load sharing examination",
     dur:1.9, batch:99.4, connFail:5443,
     dlOk:8830, dlFail:4567, bw:300,
-    notes:"ECMP imbalance identified as primary blocker. 3 failure modes: tunnel timeout, data plane black hole (RTNETLINK), download timeout. Only 19/64 gateways receiving meaningful load. Capacity not exhausted (29% utilisation)."
+    notes:"ECMP imbalance — primary blocker. 3 failure modes: tunnel timeout, RTNETLINK black hole, DL timeout. Only 19/64 gateways loaded. Capacity at 29%."
   },
   {
     date:"2026-06-23", ord:2, net:"Cjbex1Pj7a",
     focus:"Load sharing improvement",
     dur:2.067, batch:98.1, connFail:199,
     dlOk:48269, dlFail:98, bw:1250,
-    notes:"Spontaneous recovery — no config change. All 8 tunnels active. ECMP 6:1 ratio."
+    notes:"Spontaneous recovery, no config change. All 8 tunnels active. ECMP 6:1."
   },
   {
     date:"2026-06-25", ord:1, net:"Cjbex1Pj7a",
     focus:"Edge data analysis included",
     dur:2.1, batch:96.4, connFail:514,
     dlOk:44717, dlFail:674, bw:1150,
-    notes:"ECMP ~6:1, T103 dominant. Edge infra fully confirmed via Datadog."
+    notes:"ECMP ~6:1, T103 dominant. Edge infra confirmed via Datadog."
   },
 ];
 
