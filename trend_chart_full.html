@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staging — Performance Trend</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #f7f6f2;
+    --surface:  #ffffff;
+    --border:   #e2e0d8;
+    --text:     #1a1916;
+    --text-2:   #4a4844;
+    --text-3:   #888580;
+    --accent:   #1a5fb4;
+    --ok:       #1a7a3c;
+    --ok-bg:    #e6f4ec;
+    --warn:     #7a5200;
+    --warn-bg:  #fef3d0;
+    --err:      #9b1c1c;
+    --err-bg:   #fde8e8;
+    --reg-bg:   #fff0f0;
+    --reg-border: #f5c6c6;
+    --sans:     -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --mono:     "JetBrains Mono", "Fira Mono", Consolas, monospace;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 28px 28px 56px;
+  }
+
+  header { margin-bottom: 24px; }
+  header h1 { font-size: 20px; font-weight: 600; letter-spacing: -.01em; margin-bottom: 4px; }
+  header p  { font-size: 13px; color: var(--text-3); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+
+  .control-group { display: flex; flex-direction: column; gap: 6px; }
+  .control-group label.group-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-3);
+    margin-bottom: 2px;
+  }
+  .checkboxes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cb-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    user-select: none;
+    transition: background .1s, border-color .1s;
+  }
+  .cb-label input { display: none; }
+  .cb-swatch {
+    width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+  }
+  .cb-label.active { background: var(--surface); border-color: #aaa; }
+
+  .date-pills { display: flex; gap: 6px; }
+  .pill {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    cursor: pointer;
+    transition: background .1s, border-color .1s;
+  }
+  .pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .chart-wrap { position: relative; height: 340px; }
+
+  /* Summary table */
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-3);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: #f0eeea;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-3);
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--border); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr.regression { background: var(--reg-bg); }
+  tbody tr.regression:hover { background: #fde5e5; }
+  tbody tr:not(.regression):hover { background: #faf9f6; }
+  tbody td { padding: 8px 10px; color: var(--text-2); vertical-align: middle; }
+  tbody td.bad-cell {
+    font-weight: 700;
+    color: var(--err);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .ok   { background: var(--ok-bg);   color: var(--ok);   }
+  .warn { background: var(--warn-bg); color: var(--warn); }
+  .err  { background: var(--err-bg);  color: var(--err);  }
+  .reg-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--err-bg);
+    color: var(--err);
+  }
+  .ok-flag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-3);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Staging — Performance trend</h1>
+  <p>10K agent runs · Networks: Cjbex1Pj7a · QaWL9HOEOx · Regression threshold: batch success drop &gt; 10%</p>
+</header>
+
+<div class="card">
+  <div class="controls">
+    <div class="control-group">
+      <label class="group-label">Series</label>
+      <div class="checkboxes" id="series-controls"></div>
+    </div>
+    <div class="control-group">
+      <label class="group-label">Date range</label>
+      <div class="date-pills">
+        <button class="pill" data-range="10" onclick="setRange(this)">Last 10 runs</button>
+        <button class="pill" data-range="30" onclick="setRange(this)">Last 30 days</button>
+        <button class="pill active" data-range="all" onclick="setRange(this)">All</button>
+      </div>
+    </div>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="trendChart"></canvas>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">Run summary — regressed metrics highlighted (any field)</div>
+  <table id="summary-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Network</th>
+        <th>Focus</th>
+        <th>Batch success</th>
+        <th>Conn failures</th>
+        <th>DL failures</th>
+        <th>DL success %</th>
+        <th>Peak throughput</th>
+        <th>Regression</th>
+      </tr>
+    </thead>
+    <tbody id="summary-body"></tbody>
+  </table>
+</div>
+
+<script>
+// ─── Data ───────────────────────────────────────────────────────────────────
+const AGENTS = 10000;
+
+const raw = [
+  { date:"2026-06-04", ord:1, net:"QaWL9HOEOx", focus:"Users per GW run",                  dur:1.5,   batch:98.4, connFail:2865, dlOk:22934, dlFail:7313, bw:580  },
+  { date:"2026-06-08", ord:1, net:"QaWL9HOEOx", focus:"Multiple users per GW readings",   dur:2.2,   batch:99.4, connFail:3394, dlOk:23625, dlFail:2087, bw:600  },
+  { date:"2026-06-10", ord:1, net:"QaWL9HOEOx", focus:"Run with increased downloads",      dur:3.0,   batch:84.3, connFail:3788, dlOk:36966, dlFail:3069, bw:600  },
+  { date:"2026-06-23", ord:1, net:"Cjbex1Pj7a", focus:"Load sharing examination",          dur:1.9,   batch:99.4, connFail:5443, dlOk:8830,  dlFail:4567, bw:300  },
+  { date:"2026-06-23", ord:2, net:"Cjbex1Pj7a", focus:"Load sharing improvement",          dur:2.067, batch:98.1, connFail:199,  dlOk:48269, dlFail:98,   bw:1250 },
+  { date:"2026-06-25", ord:1, net:"Cjbex1Pj7a", focus:"Edge data analysis included",       dur:2.1,   batch:96.4, connFail:514,  dlOk:44717, dlFail:674,  bw:1150 },
+];
+
+// Enrich
+const REG_THRESHOLD = 10; // % relative-or-absolute change considered a regression
+
+const runs = raw
+  .sort((a,b) => a.date+a.ord > b.date+b.ord ? 1 : -1)
+  .map((r, i, arr) => {
+    const passCount = Math.round(r.batch / 100 * AGENTS);
+    const failCount = r.connFail;
+    const dlFail    = r.dlFail;
+    const dlRate    = +(r.dlOk / (r.dlOk + r.dlFail) * 100).toFixed(1);
+    const prev      = arr[i-1];
+
+    // Batch success: flag if it drops more than 10 points vs previous run
+    const regDelta    = prev ? +(r.batch - prev.batch).toFixed(1) : null;
+    const passReg      = regDelta !== null && regDelta < -10;
+
+    // DL success %: flag if it drops more than 10 points vs previous run
+    const prevDlRate   = prev ? +(prev.dlOk / (prev.dlOk + prev.dlFail) * 100).toFixed(1) : null;
+    const dlRateDelta  = prevDlRate !== null ? +(dlRate - prevDlRate).toFixed(1) : null;
+    const dlRateReg    = dlRateDelta !== null && dlRateDelta < -10;
+
+    // Conn failures: flag if failure RATE increases by more than 10 points vs previous run
+    const connFailRate     = +(failCount / AGENTS * 100).toFixed(1);
+    const prevConnFailRate = prev ? +(prev.connFail / AGENTS * 100).toFixed(1) : null;
+    const connFailRateDelta = prevConnFailRate !== null ? +(connFailRate - prevConnFailRate).toFixed(1) : null;
+    const connFailReg      = connFailRateDelta !== null && connFailRateDelta > 10;
+
+    // DL failures: flag if failure RATE increases by more than 10 points vs previous run
+    const dlFailRate     = +(dlFail / (r.dlOk + dlFail) * 100).toFixed(1);
+    const prevDlFailRate = prev ? +(prev.dlFail / (prev.dlOk + prev.dlFail) * 100).toFixed(1) : null;
+    const dlFailRateDelta = prevDlFailRate !== null ? +(dlFailRate - prevDlFailRate).toFixed(1) : null;
+    const dlFailReg      = dlFailRateDelta !== null && dlFailRateDelta > 10;
+
+    // Peak throughput: flag if it drops more than 30% vs previous run
+    const bwPctChange  = prev && prev.bw > 0 ? +(((r.bw - prev.bw) / prev.bw) * 100).toFixed(0) : null;
+    const bwReg        = bwPctChange !== null && bwPctChange < -30;
+
+    const isReg = passReg; // chart red-dot trigger stays tied to batch success per spec
+    const anyReg = passReg || dlRateReg || connFailReg || dlFailReg || bwReg;
+
+    const label = r.date.slice(5) + (r.ord > 1 ? ` r${r.ord}` : '');
+    return {
+      ...r, passCount, failCount, dlFail, dlRate, regDelta, isReg, label,
+      passReg, dlRateReg, dlRateDelta, connFailReg, connFailRate, connFailRateDelta,
+      dlFailReg, dlFailRate, dlFailRateDelta, bwReg, bwPctChange, anyReg,
+    };
+  });
+
+// ─── Series config ───────────────────────────────────────────────────────────
+const SERIES = [
+  { key:'batch',     label:'Batch success %',       color:'#1a7a3c', yAxis:'yPct',  fmt: v => v.toFixed(1)+'%'       },
+  { key:'failCount', label:'Conn failures',      color:'#c0392b', yAxis:'yCount',fmt: v => v.toLocaleString()      },
+  { key:'dlFail',    label:'Download failures',  color:'#e67e22', yAxis:'yCount',fmt: v => v.toLocaleString()      },
+  { key:'dlRate',    label:'Download success %', color:'#8e44ad', yAxis:'yPct',  fmt: v => v.toFixed(1)+'%'       },
+  { key:'bw',        label:'Peak throughput',    color:'#0097a7', yAxis:'yBw',   fmt: v => v.toLocaleString()+' Mb/s' },
+];
+
+const visibility = { batch:true, failCount:true, dlFail:true, dlRate:true, bw:true };
+
+// ─── Filtered dataset ────────────────────────────────────────────────────────
+let activeRange = 'all';
+
+function filteredRuns() {
+  let d = [...runs];
+  if (activeRange === '10') d = d.slice(-10);
+  else if (activeRange === '30') {
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+    d = d.filter(r => new Date(r.date) >= cutoff);
+  }
+  return d;
+}
+
+// ─── Regression dots plugin ──────────────────────────────────────────────────
+const regressionPlugin = {
+  id: 'regressionDots',
+  afterDatasetsDraw(chart) {
+    const { ctx, scales } = chart;
+    const data = chart._filteredRuns || [];
+    const xScale = scales.x;
+    const yScale = scales.yPct;
+    if (!yScale || !visibility.batch) return;
+    data.forEach((r, i) => {
+      if (!r.isReg) return;
+      const x = xScale.getPixelForTick(i);
+      const y = yScale.getPixelForValue(r.batch);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(x, y, 7, 0, Math.PI * 2);
+      ctx.fillStyle = '#c0392b';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+};
+
+// ─── Chart init ─────────────────────────────────────────────────────────────
+let chart;
+
+function buildDatasets(data) {
+  return SERIES.map(s => ({
+    label: s.label,
+    data: data.map(r => r[s.key]),
+    borderColor: s.color,
+    backgroundColor: s.color + '22',
+    pointBackgroundColor: data.map(r => (s.key === 'batch' && r.isReg) ? '#c0392b' : s.color),
+    pointRadius: data.map(r => (s.key === 'batch' && r.isReg) ? 7 : 4),
+    pointHoverRadius: 7,
+    borderWidth: 2,
+    tension: 0.3,
+    yAxisID: s.yAxis,
+    hidden: !visibility[s.key],
+    fill: false,
+  }));
+}
+
+function initChart() {
+  const data = filteredRuns();
+  const ctx  = document.getElementById('trendChart').getContext('2d');
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map(r => r.label),
+      datasets: buildDatasets(data),
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1916',
+          titleColor: '#fff',
+          bodyColor: '#ccc',
+          padding: 12,
+          cornerRadius: 8,
+          callbacks: {
+            title: (items) => {
+              const r = data[items[0].dataIndex];
+              return `${r.date}${r.ord > 1 ? ' · run '+r.ord : ''} · ${r.net}`;
+            },
+            beforeBody: (items) => {
+              const r = data[items[0].dataIndex];
+              const lines = [
+                `Batch success:   ${r.batch.toFixed(1)}%`,
+                `Pass count:      ${r.passCount.toLocaleString()}`,
+                `Conn failures:   ${r.failCount.toLocaleString()}`,
+                `DL failures:     ${r.dlFail.toLocaleString()}`,
+                `DL success:      ${r.dlRate.toFixed(1)}%`,
+                `Peak throughput: ${r.bw.toLocaleString()} Mb/s`,
+              ];
+              if (r.isReg) {
+                lines.push('');
+                lines.push(`⚠ Regression: batch success dropped ${Math.abs(r.regDelta)}% — from ${(r.batch - r.regDelta).toFixed(1)}% to ${r.batch.toFixed(1)}%`);
+              }
+              return lines;
+            },
+            label: () => null,
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#e2e0d8' },
+          ticks: { color: '#888580', font: { size: 11, family: 'monospace' } },
+        },
+        yPct: {
+          type: 'linear', position: 'left',
+          min: 0, max: 100,
+          grid: { color: '#e2e0d8' },
+          ticks: { color: '#1a7a3c', font: { size: 11 }, callback: v => v+'%' },
+          title: { display: true, text: 'Batch success %', color: '#1a7a3c', font: { size: 11 } },
+          display: visibility.batch || visibility.dlRate,
+        },
+        yCount: {
+          type: 'linear', position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: { color: '#c0392b', font: { size: 11 }, callback: v => v.toLocaleString() },
+          title: { display: true, text: 'Count', color: '#c0392b', font: { size: 11 } },
+          display: visibility.failCount || visibility.dlFail,
+        },
+        yBw: {
+          type: 'linear', position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: { color: '#0097a7', font: { size: 11 }, callback: v => v+' Mb/s' },
+          title: { display: true, text: 'Throughput', color: '#0097a7', font: { size: 11 } },
+          display: visibility.bw,
+        },
+
+      }
+    },
+    plugins: [regressionPlugin],
+  });
+
+  chart._filteredRuns = data;
+  buildTable(data);
+}
+
+// ─── Summary table ───────────────────────────────────────────────────────────
+function batchCls(b) { return b >= 98 ? 'ok' : b >= 90 ? 'warn' : 'err'; }
+function cellCls(isBad) { return isBad ? 'bad-cell' : ''; }
+
+function regSummary(r) {
+  const msgs = [];
+  if (r.passReg)     msgs.push(`Batch success ↓${Math.abs(r.regDelta)}% (${(r.batch-r.regDelta).toFixed(1)}%→${r.batch.toFixed(1)}%)`);
+  if (r.dlRateReg)   msgs.push(`DL success ↓${Math.abs(r.dlRateDelta)}% (${(r.dlRate-r.dlRateDelta).toFixed(1)}%→${r.dlRate.toFixed(1)}%)`);
+  if (r.connFailReg) msgs.push(`Conn failure rate ↑${r.connFailRateDelta}pts (${(r.connFailRate-r.connFailRateDelta).toFixed(1)}%→${r.connFailRate.toFixed(1)}%)`);
+  if (r.dlFailReg)   msgs.push(`DL failure rate ↑${r.dlFailRateDelta}pts (${(r.dlFailRate-r.dlFailRateDelta).toFixed(1)}%→${r.dlFailRate.toFixed(1)}%)`);
+  if (r.bwReg)       msgs.push(`Throughput ↓${Math.abs(r.bwPctChange)}%`);
+  return msgs;
+}
+
+function buildTable(data) {
+  const tbody = document.getElementById('summary-body');
+  tbody.innerHTML = data.map(r => {
+    const msgs = regSummary(r);
+    return `
+    <tr class="${r.anyReg ? 'regression' : ''}">
+      <td style="font-family:var(--mono);font-size:12px">${r.date}${r.ord>1?` <span style="color:var(--text-3);font-size:11px">r${r.ord}</span>`:''}</td>
+      <td><span style="font-family:var(--mono);font-size:11px;background:var(--bg);border:1px solid var(--border);padding:2px 6px;border-radius:4px">${r.net}</span></td>
+      <td style="font-size:12px;color:var(--text-2)">${r.focus}</td>
+      <td class="${cellCls(r.passReg)}"><span class="badge ${batchCls(r.batch)}">${r.batch.toFixed(1)}%</span></td>
+      <td class="${cellCls(r.connFailReg)}" style="font-variant-numeric:tabular-nums">${r.failCount.toLocaleString()}</td>
+      <td class="${cellCls(r.dlFailReg)}" style="font-variant-numeric:tabular-nums">${r.dlFail.toLocaleString()}</td>
+      <td class="${cellCls(r.dlRateReg)}" style="font-variant-numeric:tabular-nums">${r.dlRate.toFixed(1)}%</td>
+      <td class="${cellCls(r.bwReg)}" style="font-variant-numeric:tabular-nums">${r.bw.toLocaleString()} Mb/s</td>
+      <td>${msgs.length
+        ? `<span class="reg-flag">⚠ ${msgs.join(' · ')}</span>`
+        : `<span class="ok-flag">—</span>`
+      }</td>
+    </tr>
+  `;
+  }).join('');
+}
+
+// ─── Series checkboxes ───────────────────────────────────────────────────────
+function buildControls() {
+  const wrap = document.getElementById('series-controls');
+  SERIES.forEach(s => {
+    const lbl = document.createElement('label');
+    lbl.className = 'cb-label active';
+    lbl.innerHTML = `
+      <input type="checkbox" checked onchange="toggleSeries('${s.key}', this.checked)">
+      <span class="cb-swatch" style="background:${s.color}"></span>
+      ${s.label}
+    `;
+    wrap.appendChild(lbl);
+  });
+}
+
+function toggleSeries(key, checked) {
+  visibility[key] = checked;
+  const idx = SERIES.findIndex(s => s.key === key);
+  chart.data.datasets[idx].hidden = !checked;
+  chart.options.scales.yPct.display   = visibility.batch || visibility.dlRate;
+  chart.options.scales.yCount.display = visibility.failCount || visibility.dlFail;
+  chart.options.scales.yBw.display    = visibility.bw;
+  // update label style
+  document.querySelectorAll('.cb-label')[idx].classList.toggle('active', checked);
+  chart.update();
+}
+
+// ─── Date range ──────────────────────────────────────────────────────────────
+function setRange(btn) {
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  activeRange = btn.dataset.range;
+  initChart();
+}
+
+// ─── Boot ────────────────────────────────────────────────────────────────────
+buildControls();
+initChart();
+</script>
+</body>
+</html>
