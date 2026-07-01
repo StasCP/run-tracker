@@ -189,13 +189,12 @@
 
 <header>
   <h1>Solo — 1K agent stability runs</h1>
-  <p>Solo &nbsp;·&nbsp; 1K agent stability &nbsp;·&nbsp; 6 runs · May–June 2026 &nbsp;·&nbsp; Earliest run pinned as baseline</p>
+  <p>Solo &nbsp;·&nbsp; 1K agent stability &nbsp;·&nbsp; 2 runs · May–June 2026 &nbsp;·&nbsp; Earliest run pinned as baseline</p>
 </header>
 
 <div class="controls">
   <select id="net-filter">
     <option value="">All networks</option>
-    <option>ZsSzYHPQMa</option>
     <option>u6on3HPusz</option>
   </select>
   <select id="sort-col">
@@ -242,47 +241,20 @@
 </div>
 
 <script>
-const runs = [            {
-    date:"2026-05-18", ord:1, net:"ZsSzYHPQMa",
-    focus:"1K stability run 3 (combined)",
-    dur:16.5, batch:73.4, connFail:5,
-    dlOk:56684, dlFail:103, bw:85,
-    notes:"99.8% Download Success — Best in 1K Series · Near-Zero Connection Failures · Higher Throughput — ~155 Mb/s Peak"
-  },
-{
+const runs = [
+  {
     date:"2026-06-20", ord:1, net:"u6on3HPusz",
     focus:"1K stability run 2",
     dur:10.0, batch:77.2, connFail:1,
     dlOk:25119, dlFail:9385, bw:95,
     notes:"WireGuard Connection Plane Clean at 1K · Root Cause: File Server Saturation — curl Timeout code=124 · Throughput Stable — No Collapse, But Insufficient"
   },
-{
+  {
     date:"2026-06-27", ord:1, net:"u6on3HPusz",
     focus:"1K stability run 3",
     dur:12.37, batch:89.1, connFail:0,
     dlOk:60521, dlFail:5741, bw:100,
     notes:"Connection Plane — Perfect 100% for First Time · Progressive Throughput Degradation After ~18:00 · 5MB File Size Reduces Server Pressure — +18.5pp Downloads"
-  },
-{
-    date:"2026-05-27", ord:1, net:"ZsSzYHPQMa",
-    focus:"1K stability run 4",
-    dur:8.5, batch:95.0, connFail:1,
-    dlOk:24668, dlFail:21055, bw:110,
-    notes:"Near-Perfect Login & Connection Reliability · 54.6% Download Success — 60s Timeout Binding · Throughput Ceiling Raised — 10MB Effect Confirmed"
-  },
-{
-    date:"2026-06-01", ord:1, net:"ZsSzYHPQMa",
-    focus:"1K stability run 5",
-    dur:11.5, batch:87.0, connFail:1,
-    dlOk:37103, dlFail:5714, bw:85,
-    notes:"Near-Perfect Login & Connection Reliability · 86.6% Download Success — 5MB Reversion Confirmed · 13.4% Failure Rate — Above Run 3 Baseline"
-  },
-{
-    date:"2026-06-05", ord:1, net:"ZsSzYHPQMa",
-    focus:"1K stability run 6",
-    dur:11.9, batch:94.0, connFail:0,
-    dlOk:50053, dlFail:3361, bw:110,
-    notes:"Zero Connection Failures — Best in Series · 93.7% Download Success — Continued Improvement · Throughput Below Run 3 — Gap Narrowing"
   },
 ];
 
