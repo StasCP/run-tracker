@@ -265,7 +265,9 @@
 const AGENTS = 10000;
 
 const raw = [
-  { date:"2026-05-20", ord:1, net:"QaWL9HOEOx", focus:"Throughput test 2 - post fix",      dur:1.25,  batch:82.8, connFail:1366, dlOk:31180, dlFail:4902, bw:800  },
+  { date:"2026-05-18", ord:1, net:"QaWL9HOEOx", focus:"Throughput test 2 — May 18", dur:1.5, batch:92.8, connFail:189, dlOk:35266, dlFail:7354, bw:750 },
+  { date:"2026-05-20", ord:1, net:"QaWL9HOEOx", focus:"Throughput test 3 — pre-fix baseline", dur:1.58, batch:94.6, connFail:1231, dlOk:38175, dlFail:4250, bw:750  },
+  { date:"2026-05-20", ord:2, net:"QaWL9HOEOx", focus:"Throughput test 2 - post fix",      dur:1.25,  batch:82.8, connFail:1366, dlOk:31180, dlFail:4902, bw:800  },
   { date:"2026-05-26", ord:1, net:"QaWL9HOEOx", focus:"MQueue fix validation",             dur:1.583, batch:92.0, connFail:1460, dlOk:24113, dlFail:4065, bw:750  },
   { date:"2026-06-04", ord:1, net:"QaWL9HOEOx", focus:"Users per GW run",                  dur:1.5,   batch:98.4, connFail:2865, dlOk:22934, dlFail:7313, bw:580  },
   { date:"2026-06-08", ord:1, net:"QaWL9HOEOx", focus:"Multiple users per GW readings",   dur:2.2,   batch:99.4, connFail:3394, dlOk:23625, dlFail:2087, bw:600  },
@@ -279,20 +281,67 @@ const raw = [
 // Per-run failure modes extracted from the run's report HTML, matched to the
 // regression metric each best explains. Do not hand-edit — re-run the injector.
 const RUN_ERRORS = {
+  "2026-05-20|1": {
+    "report": "stability_report_throughput_test3_QaWL9HOEOx.html",
+    "byMetric": {
+      "conn": {
+        "title": "Connection Failures — Primary Open Issue",
+        "body": "189 failed connections (2.0%) — WireGuard IP pool pressure is the likely cause. Connection duration of 1,000s keeps lease request frequency manageable. Further increase toward 3,600s should eliminate remaining failures."
+      },
+      "dl": {
+        "title": "10.0% Download Failure Rate — Improved",
+        "body": "4,250 failed 10MB downloads (17.2%). The 60s HTTPS timeout is too tight for 10MB files at ~600 Mb/s concurrency. Increasing to 120s is the recommended next step."
+      },
+      "throughput": {
+        "title": "~650 Mb/s Sustained Plateau — Smooth Profile",
+        "body": "~600 Mb/s sustained average across the ~1h 30m run window. Wide and smooth plateau shape — no degradation or instability. The topology delivers consistent high throughput with 10MB files."
+      }
+    },
+    "all": [
+      {
+        "title": "Connection Failures — Primary Open Issue",
+        "body": "189 failed connections (2.0%) — WireGuard IP pool pressure is the likely cause. Connection duration of 1,000s keeps lease request frequency manageable. Further increase toward 3,600s should eliminate remaining failures."
+      },
+      {
+        "title": "~650 Mb/s Sustained Plateau — Smooth Profile",
+        "body": "~600 Mb/s sustained average across the ~1h 30m run window. Wide and smooth plateau shape — no degradation or instability. The topology delivers consistent high throughput with 10MB files."
+      },
+      {
+        "title": "Most Even Tunnel Distribution — Frankfurt 4 Dominant",
+        "body": "All 8 tunnels carrying load simultaneously with a wide stacked hump across the full plateau. LA (T301) dominant at ~~14.4 Mb/s peak — all 4 regions contributing."
+      },
+      {
+        "title": "1,231 Connection Failures — Fix Required",
+        "body": "WireGuard IP pool exhaustion causing 12.3% connection failure rate. IP pool must be expanded to cover peak concurrent 10,000-agent load. This is the primary action item before the next run."
+      },
+      {
+        "title": "10.0% Download Failure Rate — Improved",
+        "body": "4,250 failed 10MB downloads (17.2%). The 60s HTTPS timeout is too tight for 10MB files at ~600 Mb/s concurrency. Increasing to 120s is the recommended next step."
+      },
+      {
+        "title": "Baseline Established — Two Fixes to Validate",
+        "body": "Every metric improved: connection failures −83%, throughput +9%, download success +4.5pp, tunnel distribution smoother. Connection duration confirmed as the key tuning parameter for this test configuration."
+      }
+    ]
+  },
   "2026-06-04|1": {
     "report": "stability_report_10k_run1_QaWL9HOEOx_6.html",
     "byMetric": {
       "conn": {
-        "title": "Connection Failure Analysis — WireGuard IP Pool Exhaustion Confirmed",
-        "body": "Agent log evidence: failed leasing ip: can't get ip from set: wireguard:ippool, since the pool is empty. Gateway rejects peer immediately — agent retries ~600s before giving up. WireGuard ippool undersized for 10K concurrent connections. Subnet 10.250.0.0/16 — pool range needs investigation."
+        "title": "29.1% Connection Failures — WireGuard IP Pool Exhaustion Confirmed",
+        "body": "2,865 failed connections. Agent log evidence: failed leasing ip: can't get ip from set: wireguard:ippool, since the pool is empty. The gateway rejects the peer immediately — the agent retries for ~600s before giving up. The 600s seen in CloudWatch is retry duration after rejection, not a handshake timeout. Root cause: WireGuard ippool undersized for 10K concurrent connections on network QaWL9HOEOx (subnet 10.250.0.0/16)."
       },
       "dl": {
-        "title": "Download Failure Analysis — HTTPS 60s Timeout Confirmed",
-        "body": "CloudWatch log evidence: all failures hit measured_time=60.01s. file-partial (0.02–6.97 MB received) and no-partial-file (0.0 MB) subtypes documented. 60s is insufficient for 10MB at this load."
+        "title": "24.2% Download Failures — HTTPS 60s Timeout Confirmed",
+        "body": "7,313 failed downloads. Every failure hits measured_time=60.01s. file-partial: received 0.02–6.97 MB of 10MB. no-partial-file: 0.0 MB received. Both confirm the 60s wall. Independent of the 2,865 connection failures — different agents, different cause."
       },
       "throughput": {
-        "title": "500 kbps/Agent Goal",
-        "body": "~400 Mb/s sustained across ~6,973 connected agents ≈ ~57 kbps/agent. Well below 500 kbps target. Post-timeout-fix retest needed for meaningful per-agent measurement — current failures distort the baseline."
+        "title": "Strong Throughput on Connected Agents",
+        "body": "Peak ~580 Mb/s, sustained ~400 Mb/s over the active phase. Average download time ~25–32s on successful transfers. The network is not bandwidth-constrained. Failures are entirely timeout-driven — fixing both timeouts should produce materially better results without any infrastructure change."
+      },
+      "batch": {
+        "title": "Login Reliability & Batch Success — Best in Series",
+        "body": "9,840 / 9,841 logins succeeded. Batch: 9,840 / 10,000 (98.4%) — best result in the series. The login and job scheduling planes are stable at 10K scale. Failures are in the connection and download planes only."
       }
     },
     "all": [
@@ -323,6 +372,30 @@ const RUN_ERRORS = {
       {
         "title": "500 kbps/Agent Goal",
         "body": "~400 Mb/s sustained across ~6,973 connected agents ≈ ~57 kbps/agent. Well below 500 kbps target. Post-timeout-fix retest needed for meaningful per-agent measurement — current failures distort the baseline."
+      },
+      {
+        "title": "29.1% Connection Failures — WireGuard IP Pool Exhaustion Confirmed",
+        "body": "2,865 failed connections. Agent log evidence: failed leasing ip: can't get ip from set: wireguard:ippool, since the pool is empty. The gateway rejects the peer immediately — the agent retries for ~600s before giving up. The 600s seen in CloudWatch is retry duration after rejection, not a handshake timeout. Root cause: WireGuard ippool undersized for 10K concurrent connections on network QaWL9HOEOx (subnet 10.250.0.0/16)."
+      },
+      {
+        "title": "Login Reliability & Batch Success — Best in Series",
+        "body": "9,840 / 9,841 logins succeeded. Batch: 9,840 / 10,000 (98.4%) — best result in the series. The login and job scheduling planes are stable at 10K scale. Failures are in the connection and download planes only."
+      },
+      {
+        "title": "24.2% Download Failures — HTTPS 60s Timeout Confirmed",
+        "body": "7,313 failed downloads. Every failure hits measured_time=60.01s. file-partial: received 0.02–6.97 MB of 10MB. no-partial-file: 0.0 MB received. Both confirm the 60s wall. Independent of the 2,865 connection failures — different agents, different cause."
+      },
+      {
+        "title": "Strong Throughput on Connected Agents",
+        "body": "Peak ~580 Mb/s, sustained ~400 Mb/s over the active phase. Average download time ~25–32s on successful transfers. The network is not bandwidth-constrained. Failures are entirely timeout-driven — fixing both timeouts should produce materially better results without any infrastructure change."
+      },
+      {
+        "title": "Gateway Outlier — 207.246.96.183 at 775 Users (5.1× Avg)",
+        "body": "Mid-test snapshot at 10:45 shows 37 of 64 gateways active, 27 at zero. One gateway carries 775 users vs active-gateway average of 153. Single-snapshot methodology limits interpretation — 4-samples-per-loop planned for future runs. Outlier cannot be confirmed as persistent until multi-sample data is available."
+      },
+      {
+        "title": "Post-FF Load Sharing Confirmed Across All 8 Terminations",
+        "body": "All 8 tunnel terminations received traffic in this run — post-FF load sharing active across all legs. Tunnel traffic data omitted from this report; per-tunnel attribution under investigation and will be included in the next 10K report."
       }
     ]
   },
@@ -334,12 +407,12 @@ const RUN_ERRORS = {
         "body": "3,788 of 9,808 network connections failed. The rate has increased from 34% in Run 7 to 38.6% in Run 8. Root cause has not been confirmed across either run. The worsening trend makes this the highest-priority investigation item before the next 10K run."
       },
       "dl": {
-        "title": "Download Failure Rate — 7.7% — Under Investigation",
-        "body": "3,069 of 40,035 download attempts failed. Rate is broadly consistent with Run 7 (8.1%). Failure pattern and timing not yet correlated with connection failures or throughput curve. Investigation ongoing alongside connection failure root cause."
+        "title": "Late-Run Download Time Spike — ~40s at 14:10",
+        "body": "Average download time rose to ~40s near 14:10, up from the ~28–30s peak observed in Run 7. The spike coincides with the end of the active download period and may reflect fewer concurrent connections concentrating remaining load. Pattern warrants monitoring in subsequent runs."
       },
       "throughput": {
-        "title": "Download Failure Rate — 7.7% — Under Investigation",
-        "body": "3,069 of 40,035 download attempts failed. Rate is broadly consistent with Run 7 (8.1%). Failure pattern and timing not yet correlated with connection failures or throughput curve. Investigation ongoing alongside connection failure root cause."
+        "title": "Throughput Ceiling Unchanged at ~600 Mb/s — Goal Not Achieved",
+        "body": "Run 8 goal was to increase throughput by doubling per-agent file count (5 × 10MB → 10 × 10MB). Peak throughput remained at ~600 Mb/s — identical to Run 7. The ceiling was not raised by the file count change, indicating the limit is imposed at the connection or network layer. Total download volume increased (36,966 vs 23,625 in Run 7), but peak bandwidth was unchanged."
       },
       "batch": {
         "title": "Batch Failures — 1,574 of 10,000 — Root Cause Required",
@@ -362,6 +435,30 @@ const RUN_ERRORS = {
       {
         "title": "Late-Run Download Time Spike (~40s at 14:10) — Monitoring Required",
         "body": "Average download time spiked to approximately 40s near 14:10 — higher than the ~28–30s peak observed in Run 7. This may reflect fewer concurrent connections concentrating remaining load toward the end of the run. Should be monitored in subsequent runs."
+      },
+      {
+        "title": "Login Plane Fully Stable — Zero Failures",
+        "body": "9,886 successful logins with 0 failures. The authentication infrastructure has now been confirmed stable across multiple 10K runs. No degradation observed in this run."
+      },
+      {
+        "title": "Batch Success Regressed — 84.3% vs 99.4% in Run 7",
+        "body": "1,574 of 10,000 batch jobs failed — a significant regression from Run 7. Failures are pre-connection. Root cause must be confirmed before the next run. This is a new critical-path item."
+      },
+      {
+        "title": "Connection Failure Rate Increased — 38.6% (up from 34%)",
+        "body": "3,788 of 9,808 network connections failed. The failure rate has grown run-over-run (34% → 38.6%). Root cause remains unconfirmed. Until resolved, conclusions about sustained 10K load capacity cannot be drawn."
+      },
+      {
+        "title": "Download Failure Rate — 7.7% (3,069 of 40,035)",
+        "body": "Broadly consistent with Run 7's 8.1%. 36,966 successful 10MB downloads were recorded. Failure pattern and timing not yet correlated with connection failures or gateway load. Investigation pending alongside connection failures."
+      },
+      {
+        "title": "Throughput Ceiling Unchanged at ~600 Mb/s — Goal Not Achieved",
+        "body": "Run 8 goal was to increase throughput by doubling per-agent file count (5 × 10MB → 10 × 10MB). Peak throughput remained at ~600 Mb/s — identical to Run 7. The ceiling was not raised by the file count change, indicating the limit is imposed at the connection or network layer. Total download volume increased (36,966 vs 23,625 in Run 7), but peak bandwidth was unchanged."
+      },
+      {
+        "title": "Late-Run Download Time Spike — ~40s at 14:10",
+        "body": "Average download time rose to ~40s near 14:10, up from the ~28–30s peak observed in Run 7. The spike coincides with the end of the active download period and may reflect fewer concurrent connections concentrating remaining load. Pattern warrants monitoring in subsequent runs."
       }
     ]
   },
@@ -369,8 +466,8 @@ const RUN_ERRORS = {
     "report": "report_Cjbex1Pj7a_run1_run2_june23_4.html",
     "byMetric": {
       "conn": {
-        "title": "ECMP/UCMP full uniformity — 6:1 imbalance remains in Run 2",
-        "body": "T101 at ~36% of traffic vs T108/T105 at ~4% each. Full UCMP uniformity across all 8 terminations required to scale toward 7,200 Mb/s MVP target. Joint session with @pavan's team (Bangalore)."
+        "title": "Run 2 improvement cascaded from tunnel distribution",
+        "body": "Better ECMP spread → more gateways receiving load → 98% connection success → more concurrent downloads → ×4.2 throughput. The entire improvement is downstream of tunnel distribution. Fix ECMP uniformly and all remaining metrics follow proportionally."
       },
       "dl": {
         "title": "60s download timeout budget — deprioritised",
@@ -381,8 +478,8 @@ const RUN_ERRORS = {
         "body": "Significant progress — up from 4% in Run 1. Path is clear: unblocked by ECMP uniformity fix. No further action until ECMP is resolved."
       },
       "batch": {
-        "title": "Batch failure regression: 63 (Run 1) → 186 (Run 2)",
-        "body": "Unexplained given all other metrics improved significantly. Pull batch scheduler logs. Low priority relative to ECMP and recovery investigation."
+        "title": "Batch failure regression unexplained",
+        "body": "63 batch failures in Run 1 vs 186 in Run 2 — anomalous given all other metrics improved. With 2× more agents successfully connecting in Run 2, the batch scheduler or result-reporting pipeline may have encountered higher concurrency. Requires log investigation but not a primary blocker."
       }
     },
     "all": [
@@ -413,6 +510,30 @@ const RUN_ERRORS = {
       {
         "title": "60s download timeout budget — deprioritised",
         "body": "Average download time 10–38s in Run 2. No Mode 3 timeout failures observed at this connection scale. Revisit only if download times increase under higher load."
+      },
+      {
+        "title": "T108 absence drove Run 1 failures",
+        "body": "ipsecTunnel108 carried zero traffic for the entire first hour of Run 1. With ~8 gateways behind each termination, any agent hashed to T108's gateways would fail to connect regardless of load elsewhere. T108's recovery before Run 2 likely explains a significant portion of the 54.8% → 2.0% improvement."
+      },
+      {
+        "title": "Run 1 ECMP reached only ~19 of 64 gateways",
+        "body": "INCR counter plateaued at ~4,100. At 220 connections/gateway that implies ~19 active gateways. With 9,937 agents attempting connections, each of those 19 gateways needed to handle ~523 agents — over 2× per-gateway capacity. Failure was structural, not probabilistic."
+      },
+      {
+        "title": "Run 2 improvement cascaded from tunnel distribution",
+        "body": "Better ECMP spread → more gateways receiving load → 98% connection success → more concurrent downloads → ×4.2 throughput. The entire improvement is downstream of tunnel distribution. Fix ECMP uniformly and all remaining metrics follow proportionally."
+      },
+      {
+        "title": "Run 2 improvement is not config-locked and not stable",
+        "body": "No change was made between runs. Infrastructure self-recovered — ECMP reconvergence, IKE SA expiry, or T108 recovering from silent failure are the most likely causes. The next run could reproduce Run 1 conditions. Gateway logs for 11:56–14:15 UTC must be pulled and the recovery cause identified and locked in."
+      },
+      {
+        "title": "Run 2 ECMP still not uniform — T101 at 36%",
+        "body": "End-of-run snapshot: T101 625 B/s · T107 625 B/s · T104/T103/T105 ~96 B/s. Imbalance ratio improved from ~50:1 to ~6:1 but ideal ECMP is ≤ 3:1 across all 8. The remaining imbalance caps throughput at 17% of the 7,200 Mb/s MVP target. Full UCMP with @pavan's team is the critical path."
+      },
+      {
+        "title": "Batch failure regression unexplained",
+        "body": "63 batch failures in Run 1 vs 186 in Run 2 — anomalous given all other metrics improved. With 2× more agents successfully connecting in Run 2, the batch scheduler or result-reporting pipeline may have encountered higher concurrency. Requires log investigation but not a primary blocker."
       }
     ]
   },
@@ -420,8 +541,8 @@ const RUN_ERRORS = {
     "report": "report_Cjbex1Pj7a_run1_run2_june23_4.html",
     "byMetric": {
       "conn": {
-        "title": "ECMP/UCMP full uniformity — 6:1 imbalance remains in Run 2",
-        "body": "T101 at ~36% of traffic vs T108/T105 at ~4% each. Full UCMP uniformity across all 8 terminations required to scale toward 7,200 Mb/s MVP target. Joint session with @pavan's team (Bangalore)."
+        "title": "Run 2 improvement cascaded from tunnel distribution",
+        "body": "Better ECMP spread → more gateways receiving load → 98% connection success → more concurrent downloads → ×4.2 throughput. The entire improvement is downstream of tunnel distribution. Fix ECMP uniformly and all remaining metrics follow proportionally."
       },
       "dl": {
         "title": "60s download timeout budget — deprioritised",
@@ -432,8 +553,8 @@ const RUN_ERRORS = {
         "body": "Significant progress — up from 4% in Run 1. Path is clear: unblocked by ECMP uniformity fix. No further action until ECMP is resolved."
       },
       "batch": {
-        "title": "Batch failure regression: 63 (Run 1) → 186 (Run 2)",
-        "body": "Unexplained given all other metrics improved significantly. Pull batch scheduler logs. Low priority relative to ECMP and recovery investigation."
+        "title": "Batch failure regression unexplained",
+        "body": "63 batch failures in Run 1 vs 186 in Run 2 — anomalous given all other metrics improved. With 2× more agents successfully connecting in Run 2, the batch scheduler or result-reporting pipeline may have encountered higher concurrency. Requires log investigation but not a primary blocker."
       }
     },
     "all": [
@@ -464,6 +585,73 @@ const RUN_ERRORS = {
       {
         "title": "60s download timeout budget — deprioritised",
         "body": "Average download time 10–38s in Run 2. No Mode 3 timeout failures observed at this connection scale. Revisit only if download times increase under higher load."
+      },
+      {
+        "title": "T108 absence drove Run 1 failures",
+        "body": "ipsecTunnel108 carried zero traffic for the entire first hour of Run 1. With ~8 gateways behind each termination, any agent hashed to T108's gateways would fail to connect regardless of load elsewhere. T108's recovery before Run 2 likely explains a significant portion of the 54.8% → 2.0% improvement."
+      },
+      {
+        "title": "Run 1 ECMP reached only ~19 of 64 gateways",
+        "body": "INCR counter plateaued at ~4,100. At 220 connections/gateway that implies ~19 active gateways. With 9,937 agents attempting connections, each of those 19 gateways needed to handle ~523 agents — over 2× per-gateway capacity. Failure was structural, not probabilistic."
+      },
+      {
+        "title": "Run 2 improvement cascaded from tunnel distribution",
+        "body": "Better ECMP spread → more gateways receiving load → 98% connection success → more concurrent downloads → ×4.2 throughput. The entire improvement is downstream of tunnel distribution. Fix ECMP uniformly and all remaining metrics follow proportionally."
+      },
+      {
+        "title": "Run 2 improvement is not config-locked and not stable",
+        "body": "No change was made between runs. Infrastructure self-recovered — ECMP reconvergence, IKE SA expiry, or T108 recovering from silent failure are the most likely causes. The next run could reproduce Run 1 conditions. Gateway logs for 11:56–14:15 UTC must be pulled and the recovery cause identified and locked in."
+      },
+      {
+        "title": "Run 2 ECMP still not uniform — T101 at 36%",
+        "body": "End-of-run snapshot: T101 625 B/s · T107 625 B/s · T104/T103/T105 ~96 B/s. Imbalance ratio improved from ~50:1 to ~6:1 but ideal ECMP is ≤ 3:1 across all 8. The remaining imbalance caps throughput at 17% of the 7,200 Mb/s MVP target. Full UCMP with @pavan's team is the critical path."
+      },
+      {
+        "title": "Batch failure regression unexplained",
+        "body": "63 batch failures in Run 1 vs 186 in Run 2 — anomalous given all other metrics improved. With 2× more agents successfully connecting in Run 2, the batch scheduler or result-reporting pipeline may have encountered higher concurrency. Requires log investigation but not a primary blocker."
+      }
+    ]
+  },
+  "2026-05-18|1": {
+    "report": "stability_report_throughput_test2_QaWL9HOEOx_9.html",
+    "byMetric": {
+      "conn": {
+        "title": "Connection Failures Reduced 83% — Duration Tuning Works",
+        "body": "189 failed connections (2.0%) — WireGuard IP pool pressure is the likely cause. Connection duration of 1,000s keeps lease request frequency manageable. Further increase toward 3,600s should eliminate remaining failures."
+      },
+      "dl": {
+        "title": "17.2% Download Failure Rate Persists",
+        "body": "7,354 failed 10MB downloads (17.2%). The 60s HTTPS timeout is too tight for 10MB files at ~600 Mb/s concurrency. Increasing to 120s is the recommended next step."
+      },
+      "throughput": {
+        "title": "Higher Sustained Throughput — ~600 Mb/s Plateau",
+        "body": "~600 Mb/s sustained average across the ~1h 30m run window. Wide and smooth plateau shape — no degradation or instability. The topology delivers consistent high throughput with 10MB files."
+      }
+    },
+    "all": [
+      {
+        "title": "Connection Failures Reduced 83% — Duration Tuning Works",
+        "body": "189 failed connections (2.0%) — WireGuard IP pool pressure is the likely cause. Connection duration of 1,000s keeps lease request frequency manageable. Further increase toward 3,600s should eliminate remaining failures."
+      },
+      {
+        "title": "Higher Sustained Throughput — ~600 Mb/s Plateau",
+        "body": "~600 Mb/s sustained average across the ~1h 30m run window. Wide and smooth plateau shape — no degradation or instability. The topology delivers consistent high throughput with 10MB files."
+      },
+      {
+        "title": "Broadest Tunnel Distribution in Series",
+        "body": "All 8 tunnels carrying load simultaneously with a wide stacked hump across the full plateau. LA (T301) dominant at ~1.8 MB/s peak — all 4 regions contributing."
+      },
+      {
+        "title": "189 Connection Failures Remain",
+        "body": "WireGuard IP pool not yet fully sized for 10,000 concurrent agents at this file size. Increasing connection duration toward 3,600s or expanding the pool should eliminate remaining failures."
+      },
+      {
+        "title": "17.2% Download Failure Rate Persists",
+        "body": "7,354 failed 10MB downloads (17.2%). The 60s HTTPS timeout is too tight for 10MB files at ~600 Mb/s concurrency. Increasing to 120s is the recommended next step."
+      },
+      {
+        "title": "Next Steps Identified",
+        "body": "Every metric improved: connection failures −83%, throughput +9%, download success +4.5pp, tunnel distribution smoother. Connection duration confirmed as the key tuning parameter for this test configuration."
       }
     ]
   }

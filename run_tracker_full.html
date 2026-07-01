@@ -189,7 +189,7 @@
 
 <header>
   <h1>Staging — 10K agent performance runs</h1>
-  <p>Networks: Cjbex1Pj7a · QaWL9HOEOx &nbsp;·&nbsp; 8 runs · May–June 2026 &nbsp;·&nbsp; Earliest run pinned as baseline</p>
+  <p>Networks: Cjbex1Pj7a · QaWL9HOEOx &nbsp;·&nbsp; 10 runs · May–June 2026 &nbsp;·&nbsp; Earliest run pinned as baseline</p>
 </header>
 
 <div class="controls">
@@ -244,7 +244,21 @@
 <script>
 const runs = [
   {
+    date:"2026-05-18", ord:1, net:"QaWL9HOEOx",
+    focus:"Throughput test 2 — May 18",
+    dur:1.5, batch:92.8, connFail:189,
+    dlOk:35266, dlFail:7354, bw:750,
+    notes:"Connection Failures Reduced 83% — Duration Tuning Works · Higher Sustained Throughput — ~600 Mb/s Plateau · Broadest Tunnel Distribution in Series"
+  },
+  {
     date:"2026-05-20", ord:1, net:"QaWL9HOEOx",
+    focus:"Throughput test 3 — pre-fix baseline",
+    dur:1.58, batch:94.6, connFail:1231,
+    dlOk:38175, dlFail:4250, bw:750,
+    notes:"Pre-fix baseline (5→10MB downloads, post-FF). WireGuard IP pool exhaustion → 1,231 conn failures (12.3%). 60s HTTPS timeout → 10.0% DL failures. ~600 Mb/s sustained / 750 peak; all 8 tunnels active (Frankfurt 4 dominant). Two fixes to validate."
+  },
+  {
+    date:"2026-05-20", ord:2, net:"QaWL9HOEOx",
     focus:"Throughput test 2 - post fix",
     dur:1.25, batch:82.8, connFail:1366,
     dlOk:31180, dlFail:4902, bw:800,
