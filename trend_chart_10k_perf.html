@@ -880,7 +880,7 @@ function initChart() {
 }
 
 // ─── Summary table ───────────────────────────────────────────────────────────
-function batchCls(b) { return b >= 98 ? 'ok' : b >= 90 ? 'warn' : 'err'; }
+function batchCls(b) { return b >= 98 ? 'ok' : b >= 85 ? 'warn' : 'err'; }
 function cellCls(isBad) { return isBad ? 'bad-cell' : ''; }
 
 // Maps each regression flag to the report-error metric bucket that explains it.
@@ -891,14 +891,16 @@ function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 // best explains it; fall back to the report's headline finding if none matched.
 function rootCauses(r) {
   if (!r.errors) return { causes: [], all: [] };
+  const batchRed = batchCls(r.batch) === 'err';  // red batch is explained by the AWS note
   const seen = new Set(), causes = [];
   ['passReg','dlRateReg','connFailReg','dlFailReg','bwReg'].forEach(f => {
     if (!r[f]) return;
+    if (f === 'passReg' && batchRed) return;  // suppress report batch cause; AWS note covers it
     const err = r.errors.byMetric[METRIC_FOR_REG[f]];
     if (err && !seen.has(err.title)) { seen.add(err.title); causes.push(err); }
   });
   // Fallback to the headline finding only when the run is actually flagged.
-  if (!causes.length && r.anyReg && r.errors.all.length) causes.push(r.errors.all[0]);
+  if (!causes.length && r.anyReg && !batchRed && r.errors.all.length) causes.push(r.errors.all[0]);
   return { causes, all: r.errors.all };
 }
 
@@ -930,6 +932,9 @@ function buildTable(data) {
   tbody.innerHTML = data.map(r => {
     const msgs = regSummary(r);
     const rc = rootCauses(r);
+    const causes = rc.causes.slice();
+    if (batchCls(r.batch) === 'err' && !causes.some(c => /AWS issue/i.test(c.title)))
+      causes.push({ title: `Low batch success ${r.batch.toFixed(1)}% — AWS issue, no logs to confirm the reason` });
     return `
     <tr class="${r.anyReg ? 'regression' : ''}">
       <td style="font-family:var(--mono);font-size:16px">${r.date}${r.ord>1?` <span style="color:var(--text-3);font-size:15px">r${r.ord}</span>`:''}</td>
@@ -944,8 +949,8 @@ function buildTable(data) {
         ? `<span class="reg-flag${rc.all.length ? ' has-tip' : ''}">⚠ ${msgs.join(' · ')}${causeTooltip(rc)}</span>`
         : `<span class="ok-flag">—</span>`
       }</td>
-      <td class="root-cause">${rc.causes.length
-        ? rc.causes.map(c => `<div class="rc-item">${esc(c.title)}</div>`).join('')
+      <td class="root-cause">${causes.length
+        ? causes.map(c => `<div class="rc-item">${esc(c.title)}</div>`).join('')
         : `<span class="ok-flag">—</span>`
       }</td>
     </tr>

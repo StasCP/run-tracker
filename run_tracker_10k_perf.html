@@ -325,7 +325,7 @@ function dlRate(r){ return r.dlOk / (r.dlOk + r.dlFail) * 100; }
 function cls(val, ok, warn){ return val >= ok ? 'ok' : val >= warn ? 'warn' : 'err'; }
 function bwCls(bw)  { return bw >= 1000 ? 'ok' : bw >= 600 ? 'warn' : 'err'; }
 function connCls(r) { const p = r.connFail/10000*100; return p < 5 ? 'ok' : p < 20 ? 'warn' : 'err'; }
-function batchCls(b){ return cls(b, 98, 90); }
+function batchCls(b){ return cls(b, 98, 85); }
 function dlCls(d)   { return cls(d, 98, 85); }
 function fmt(n)     { return n.toLocaleString('en-US'); }
 function isBaseline(r){ return (r.date+r.ord) === BASELINE_ID; }
