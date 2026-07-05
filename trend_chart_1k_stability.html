@@ -266,6 +266,7 @@ const AGENTS = 1000;
 const REG_TH = { batch:5, dl:5, conn:5, dlfail:5, bw:15 };
 
 const raw = [
+  { date:"2026-07-03", ord:1, net:"u6on3HPusz", focus:"1K stability run 4", dur:16.58, batch:100.0, connFail:0, dlOk:46907, dlFail:19877, bw:68 },
   { date:"2026-06-20", ord:1, net:"u6on3HPusz", focus:"1K stability run 2", dur:10.0, batch:77.2, connFail:1, dlOk:25119, dlFail:9385, bw:95 },
   { date:"2026-06-27", ord:1, net:"u6on3HPusz", focus:"1K stability run 3", dur:12.37, batch:89.1, connFail:0, dlOk:60521, dlFail:5741, bw:100 },
 ];
@@ -274,135 +275,6 @@ const raw = [
 // Per-run failure modes extracted from the run's report HTML, matched to the
 // regression metric each best explains. Do not hand-edit — re-run the injector.
 const RUN_ERRORS = {
-  "2026-06-05|1": {
-    "report": "stability_report_1k_run6_ZsSzYHPQMa_6_1.html",
-    "byMetric": {
-      "conn": {
-        "title": "Zero Connection Failures — Best in Series",
-        "body": "12,190 connections, 0 failures across all loops. The first run in the ZsSzYHPQMa series to achieve zero connection failures across all loops."
-      },
-      "dl": {
-        "title": "93.7% Download Success — Continued Improvement",
-        "body": "50,053 / 53,414 successful — +7.1pp vs Run 5. Download time stabilised at 5–12s vs Run 5's volatile 8–12s. The trend from Run 4 (53.9%) through Run 5 (86.6%) to Run 6 (93.7%) is consistently improving. 3,361 failures remain; root cause not yet isolated."
-      },
-      "throughput": {
-        "title": "Throughput Below Run 3 — Gap Narrowing",
-        "body": "Peak ~110 Mb/s and avg ~55–60 Mb/s are meaningfully above Run 5 but still short of Run 3's ~155 Mb/s peak and ~80 Mb/s avg. Both use 5MB files. The gap is narrowing across runs but the Run 3 ceiling has not been reproduced — server-side variability or time-of-day load remain candidate explanations."
-      }
-    },
-    "all": [
-      {
-        "title": "Zero Connection Failures — Best in Series",
-        "body": "12,190 connections, 0 failures across all loops. The first run in the ZsSzYHPQMa series to achieve zero connection failures across all loops."
-      },
-      {
-        "title": "93.7% Download Success — Continued Improvement",
-        "body": "50,053 / 53,414 successful — +7.1pp vs Run 5. Download time stabilised at 5–12s vs Run 5's volatile 8–12s. The trend from Run 4 (53.9%) through Run 5 (86.6%) to Run 6 (93.7%) is consistently improving. 3,361 failures remain; root cause not yet isolated."
-      },
-      {
-        "title": "Throughput Below Run 3 — Gap Narrowing",
-        "body": "Peak ~110 Mb/s and avg ~55–60 Mb/s are meaningfully above Run 5 but still short of Run 3's ~155 Mb/s peak and ~80 Mb/s avg. Both use 5MB files. The gap is narrowing across runs but the Run 3 ceiling has not been reproduced — server-side variability or time-of-day load remain candidate explanations."
-      },
-      {
-        "title": "Tunnel Telemetry Under Investigation",
-        "body": "Grafana tunnel traffic data showed inconsistencies during this run and has been excluded from the report. Prior runs consistently showed T101 dominant with T102 near-zero (pre-FF expected behaviour). Tunnel-level reporting will resume once the Grafana data source is validated."
-      }
-    ]
-  },
-  "2026-06-01|1": {
-    "report": "stability_report_1k_run5_ZsSzYHPQMa_6.html",
-    "byMetric": {
-      "conn": {
-        "title": "Near-Perfect Login & Connection Reliability",
-        "body": "11,238 logins / 1 failed. 11,214 connections / 1 failed (0.01%). Fifth consecutive run with near-zero connection failures — the connection plane is stable at 1K scale regardless of file size or run duration."
-      },
-      "dl": {
-        "title": "86.6% Download Success — 5MB Reversion Confirmed",
-        "body": "37,103 successful downloads out of 42,817 attempts. +32.7pp recovery vs run 4 (53.9%). Confirms the 60s timeout was the primary failure driver in run 4 — 5MB files sit comfortably within the timeout envelope under this load."
-      },
-      "throughput": {
-        "title": "Throughput Below Run 3 — Same File Size, Lower Ceiling",
-        "body": "Peak ~85 Mb/s vs ~155 Mb/s in run 3; avg ~40–45 Mb/s vs ~80 Mb/s. Both runs use 5MB files on ZsSzYHPQMa with identical topology. The gap is notable and warrants investigation — server-side variability or different agent concurrency profiles are possible causes."
-      },
-      "batch": {
-        "title": "Batch Success ~87% — Duration Effect",
-        "body": "Estimated ~8,700 / 10,000 batch jobs succeeded (~87%), down from ~95% in run 4. The longer run window (~11.5h vs ~8.5h) increases AWS scheduling collision exposure. AWS-side failures are excluded from analysis per convention. Pattern is consistent with run 3's 73.4% at ~16.5h — longer runs reduce batch rate."
-      }
-    },
-    "all": [
-      {
-        "title": "Near-Perfect Login & Connection Reliability",
-        "body": "11,238 logins / 1 failed. 11,214 connections / 1 failed (0.01%). Fifth consecutive run with near-zero connection failures — the connection plane is stable at 1K scale regardless of file size or run duration."
-      },
-      {
-        "title": "86.6% Download Success — 5MB Reversion Confirmed",
-        "body": "37,103 successful downloads out of 42,817 attempts. +32.7pp recovery vs run 4 (53.9%). Confirms the 60s timeout was the primary failure driver in run 4 — 5MB files sit comfortably within the timeout envelope under this load."
-      },
-      {
-        "title": "13.4% Failure Rate — Above Run 3 Baseline",
-        "body": "5,714 download failures on the same 5MB / same topology as run 3 (0.2% failure rate). Run 3 ran longer (~16.5h) with better success — duration is not the cause. Single-server load variability is the most likely candidate; the higher connection count in this run (11K vs run 3's 12K) does not explain the gap either."
-      },
-      {
-        "title": "Throughput Below Run 3 — Same File Size, Lower Ceiling",
-        "body": "Peak ~85 Mb/s vs ~155 Mb/s in run 3; avg ~40–45 Mb/s vs ~80 Mb/s. Both runs use 5MB files on ZsSzYHPQMa with identical topology. The gap is notable and warrants investigation — server-side variability or different agent concurrency profiles are possible causes."
-      },
-      {
-        "title": "Pre-FF Baseline Extended — T101 Dominant Again",
-        "body": "T101 carries all traffic (~80–180 kB/s active phase), T102 near-zero. Identical pre-FF distribution pattern across all five ZsSzYHPQMa runs. Tunnel peak ~180 kB/s lower than run 4 (~220 kB/s), consistent with lower throughput. Sharp 18:00 drop followed by ~20 kB/s tail through 22:00."
-      },
-      {
-        "title": "Batch Success ~87% — Duration Effect",
-        "body": "Estimated ~8,700 / 10,000 batch jobs succeeded (~87%), down from ~95% in run 4. The longer run window (~11.5h vs ~8.5h) increases AWS scheduling collision exposure. AWS-side failures are excluded from analysis per convention. Pattern is consistent with run 3's 73.4% at ~16.5h — longer runs reduce batch rate."
-      }
-    ]
-  },
-  "2026-05-27|1": {
-    "report": "stability_report_1k_run4_ZsSzYHPQMa.html",
-    "byMetric": {
-      "conn": {
-        "title": "Near-Perfect Login & Connection Reliability",
-        "body": "10,223 logins / 0 failed. 10,206 connections / 1 failed (0.01%). Consistent with all prior 1K runs — the connection plane is stable regardless of file size or loop count."
-      },
-      "dl": {
-        "title": "54.6% Download Success — 60s Timeout Binding",
-        "body": "21,055 failed downloads out of 45,723 attempts. 10MB files under single-server sustained load frequently exceed the 60s HTTPS timeout. The weekend run's 97.9% success rate with 5MB files confirms the timeout is the discriminating factor, not the tunnel or connection layer."
-      },
-      "throughput": {
-        "title": "Throughput Ceiling Raised — 10MB Effect Confirmed",
-        "body": "Peak ~110 Mb/s (+29% vs ~85 Mb/s), avg ~65 Mb/s (+103% vs ~32 Mb/s). Doubling the file size successfully raised the throughput ceiling on the same single-server topology. The single EC2 file server is the binding constraint — not the tunnel."
-      },
-      "batch": {
-        "title": "Batch Success Improved — ~95% (Derived)",
-        "body": "Estimated ~9,500 / 10,000 batch jobs succeeded (~95%), up from 69% in the weekend run. The improvement is likely attributable to the shorter run duration (8.5h vs 21h) reducing AWS scheduling collision rate. AWS-side failures are excluded from analysis per convention."
-      }
-    },
-    "all": [
-      {
-        "title": "Near-Perfect Login & Connection Reliability",
-        "body": "10,223 logins / 0 failed. 10,206 connections / 1 failed (0.01%). Consistent with all prior 1K runs — the connection plane is stable regardless of file size or loop count."
-      },
-      {
-        "title": "54.6% Download Success — 60s Timeout Binding",
-        "body": "21,055 failed downloads out of 45,723 attempts. 10MB files under single-server sustained load frequently exceed the 60s HTTPS timeout. The weekend run's 97.9% success rate with 5MB files confirms the timeout is the discriminating factor, not the tunnel or connection layer."
-      },
-      {
-        "title": "Throughput Ceiling Raised — 10MB Effect Confirmed",
-        "body": "Peak ~110 Mb/s (+29% vs ~85 Mb/s), avg ~65 Mb/s (+103% vs ~32 Mb/s). Doubling the file size successfully raised the throughput ceiling on the same single-server topology. The single EC2 file server is the binding constraint — not the tunnel."
-      },
-      {
-        "title": "Download Time Volatile — No Stable Plateau",
-        "body": "Avg download time 15–22s throughout, volatile with no stabilisation. Weekend run reached a stable 3–7s plateau from ~04:00 onwards. The volatility with 10MB files reflects sustained pressure on the single file server — 10K chunks vs 5K, with the same 60s timeout window."
-      },
-      {
-        "title": "Pre-FF Baseline Continues — T101 Dominant",
-        "body": "T101 carries all traffic (~100–220 kB/s), T102 near-zero. Identical pre-FF distribution pattern to the weekend run. Tunnel traffic peak (~220 kB/s) is marginally higher than the weekend run (~210 kB/s) — consistent with the higher throughput achieved. The next post-FF run will show load sharing across all legs."
-      },
-      {
-        "title": "Batch Success Improved — ~95% (Derived)",
-        "body": "Estimated ~9,500 / 10,000 batch jobs succeeded (~95%), up from 69% in the weekend run. The improvement is likely attributable to the shorter run duration (8.5h vs 21h) reducing AWS scheduling collision rate. AWS-side failures are excluded from analysis per convention."
-      }
-    ]
-  },
   "2026-06-27|1": {
     "report": "stability_report_1k_run3_u6on3HPusz_8.html",
     "byMetric": {
@@ -477,70 +349,38 @@ const RUN_ERRORS = {
       }
     ]
   },
-  "2026-05-18|1": {
-    "report": "stability_report_1k_run3_combined_ZsSzYHPQMa_13.html",
+  "2026-07-03|1": {
+    "report": "stability_report_1k_run4_u6on3HPusz_5.html",
     "byMetric": {
       "conn": {
-        "title": "Near-Zero Connection Failures",
-        "body": "5 failed connections in 11,410 attempts (0.04%) — the best connection reliability in the 1K series. Combined with 1 login failure, the agent and connectivity layer is extremely stable."
+        "title": "Connection Plane — Perfect 100% Two Runs Running",
+        "body": "24,974 / 24,974 connections succeeded across ~25 loops — zero failures. This is the second consecutive 100% connection result, following Run 3. At 1K scale, the WireGuard connection infrastructure is now proven stable over two independent extended multi-hour runs, including this run's ~16.6-hour overnight window."
       },
       "dl": {
-        "title": "99.8% Download Success — Best in 1K Series",
-        "body": "Only 103 failed downloads in 56,787 attempts over 16.5 hours. Significant improvement vs run 1 (97.9%) and run 2 (96.1%). Near-perfect data-plane reliability over an extended run."
-      },
-      "throughput": {
-        "title": "Higher Throughput — ~155 Mb/s Peak",
-        "body": "Peak of ~155 Mb/s and ~80 Mb/s average — notably higher than run 1 (~85/~32) and run 2 (~80/~35). Cyclic burst pattern sustained across the full 16.5h with no degradation."
+        "title": "Batch vs. Download Divergence — Still Unreconciled",
+        "body": "Batch success reached 100% (1,000/1,000) — a series best — while download success fell to 70.2%, a series worst, in the same run. Runs 1–3 all showed batch success tracking download success within a reasonable range. The CloudWatch investigation did not surface an explanation for this divergence; it remains open."
       },
       "batch": {
-        "title": "73.4% Batch Success — Persistent Pattern",
-        "body": "266 batch failures — consistent across all 1K runs (69%, 72.2%, 73.4%). AWS-side scheduling issue, unrelated to data-plane performance. Investigation ongoing."
+        "title": "Batch vs. Download Divergence — Still Unreconciled",
+        "body": "Batch success reached 100% (1,000/1,000) — a series best — while download success fell to 70.2%, a series worst, in the same run. Runs 1–3 all showed batch success tracking download success within a reasonable range. The CloudWatch investigation did not surface an explanation for this divergence; it remains open."
       }
     },
     "all": [
       {
-        "title": "99.8% Download Success — Best in 1K Series",
-        "body": "Only 103 failed downloads in 56,787 attempts over 16.5 hours. Significant improvement vs run 1 (97.9%) and run 2 (96.1%). Near-perfect data-plane reliability over an extended run."
+        "title": "Connection Plane — Perfect 100% Two Runs Running",
+        "body": "24,974 / 24,974 connections succeeded across ~25 loops — zero failures. This is the second consecutive 100% connection result, following Run 3. At 1K scale, the WireGuard connection infrastructure is now proven stable over two independent extended multi-hour runs, including this run's ~16.6-hour overnight window."
       },
       {
-        "title": "Near-Zero Connection Failures",
-        "body": "5 failed connections in 11,410 attempts (0.04%) — the best connection reliability in the 1K series. Combined with 1 login failure, the agent and connectivity layer is extremely stable."
+        "title": "Confirmed: Routing Failures on 191 Agents (19.1%)",
+        "body": "CloudWatch investigation, scoped correctly to this run's batch ID (50446636-129c-4c21-a535-0845a5106277), found 191 of 1,000 agents hit repeated could-not-add-route events, retrying ~5.6 times each (1,061 events total). The real failure taxonomy is file-download-failed with two shapes — no-partial-file (0 bytes) and file-partial (partial transfer, 0.03–1.7MB observed). The routing failures plausibly explain the no-partial-file cases; file-partial cases remain unexplained."
       },
       {
-        "title": "Higher Throughput — ~155 Mb/s Peak",
-        "body": "Peak of ~155 Mb/s and ~80 Mb/s average — notably higher than run 1 (~85/~32) and run 2 (~80/~35). Cyclic burst pattern sustained across the full 16.5h with no degradation."
+        "title": "Batch vs. Download Divergence — Still Unreconciled",
+        "body": "Batch success reached 100% (1,000/1,000) — a series best — while download success fell to 70.2%, a series worst, in the same run. Runs 1–3 all showed batch success tracking download success within a reasonable range. The CloudWatch investigation did not surface an explanation for this divergence; it remains open."
       },
       {
-        "title": "73.4% Batch Success — Persistent Pattern",
-        "body": "266 batch failures — consistent across all 1K runs (69%, 72.2%, 73.4%). AWS-side scheduling issue, unrelated to data-plane performance. Investigation ongoing."
-      },
-      {
-        "title": "Pre-FF Baseline — T101 Dominant",
-        "body": "Tunnel traffic shows T101 only (T102 near-zero), peak ~6.7 Mb/s at ~15:45. Consistent pre-FF distribution pattern — no cross-region load sharing as expected for this network."
-      },
-      {
-        "title": "Download Time Stable After Warmup",
-        "body": "After initial volatility (~20s peak at ~15:45), download time settled firmly to 3–7s from ~17:00 and held there for the remaining 15 hours — confirming excellent steady-state behaviour."
-      },
-      {
-        "title": "Download Time Stabilises After Warmup",
-        "body": "After an initial volatile window (0–04:00, peaking at ~15s), avg download time settled firmly into a 3–7s band for the remaining 17 hours — confirming the topology reaches a stable steady state."
-      },
-      {
-        "title": "73.4% Batch Success Rate",
-        "body": "266 batch failures (26.6%) — consistent with the pattern seen in prior runs. Root cause not yet identified. Likely scheduling or coordination layer issue, not data-plane related. Investigation ongoing."
-      },
-      {
-        "title": "0.2% Download Failure Rate",
-        "body": "103 failed 5MB downloads — higher than the load sharing test (0.002%). Likely influenced by the single file server constraint (EC2 × 1 vs × 4 in prior runs), creating bottleneck under sustained 21h load."
-      },
-      {
-        "title": "Pre-FF Baseline Established",
-        "body": "Tunnel traffic shows only ipsecTunnel101/102 (single HA pair), with no load distribution across regions. This is the expected pre-FF behaviour and establishes the baseline for direct comparison with the next post-FF stability run."
-      },
-      {
-        "title": "Single Server Throughput Ceiling Visible",
-        "body": "~85 Mb/s peak vs ~780–850 Mb/s in 4-server runs. The single EC2 file server is a clear throughput constraint for this topology — consistent with the 2-region, 1K agent scope of this test. The next run on the same topology will maintain this constraint, making throughput comparison directly valid."
+        "title": "Series Trajectory — Regression Breaks a Three-Run Improvement Streak",
+        "body": "Connections: 63.5% → 99.99% → 100% → 100%. Downloads: 68.3% → 72.8% → 91.3% → 70.2% (dashboard). Batch: 85.7% → 77.2% → 89.1% → 100%. Connection and login planes remain solid, but Run 4 reverses three straight runs of download improvement. Part of the cause (routing failures) is now confirmed; the file-partial failure cause is not."
       }
     ]
   }
