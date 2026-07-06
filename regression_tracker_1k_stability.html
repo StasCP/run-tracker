@@ -169,6 +169,8 @@
     margin-left: 6px; vertical-align: middle;
   }
   .date-cell  { font-family: var(--mono); font-size: 13px; color: var(--text); }
+  a.report-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; }
+  a.report-link:hover { border-bottom-color: var(--accent); }
   .ord        { display: block; font-size: 12px; color: var(--text-3); margin-top: 2px; }
   .focus-cell { color: var(--text-2); font-size: 13px; line-height: 1.5; }
 
@@ -451,6 +453,10 @@ const RUN_ERRORS = {
 };
 // ─── end RUN_ERRORS ───
 
+// Per-run report-PDF links (run key -> Confluence attachment preview URL) —
+// filled by build_combined.py from report_urls.json.
+const REPORT_URLS = {"2026-06-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965963124%2Fstability_report_1k_run2_u6on3HPusz_6.pdf", "2026-06-27|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965242769%2Fstability_report_1k_run3_u6on3HPusz_8.pdf", "2026-07-03|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2964161638%2Fstability_report_1k_run4_u6on3HPusz_5.pdf"};
+
 // ─── Enrichment (chronological — regression is vs previous run) ────────────────
 function key(r){ return r.date + '|' + r.ord; }
 
@@ -584,7 +590,9 @@ function rowHtml(r, isBase){
 
   const trCls = isBase ? 'baseline' : (r.anyReg ? 'regression' : '');
   return `<tr class="${trCls}">
-    <td class="date-cell">${dateLabel}</td>
+    <td class="date-cell">${REPORT_URLS[key(r)]
+      ? `<a class="report-link" href="${REPORT_URLS[key(r)]}" target="_blank" rel="noopener">${dateLabel}</a>`
+      : dateLabel}</td>
     <td><span class="badge net">${r.net}</span></td>
     <td class="focus-cell">${r.focus}${baseTag}</td>
     <td class="num">${r.dur.toFixed(1)}h</td>
