@@ -357,12 +357,16 @@ const RUN_ERRORS = {
         "body": "24,974 / 24,974 connections succeeded across ~25 loops — zero failures. This is the second consecutive 100% connection result, following Run 3. At 1K scale, the WireGuard connection infrastructure is now proven stable over two independent extended multi-hour runs, including this run's ~16.6-hour overnight window."
       },
       "dl": {
-        "title": "Batch vs. Download Divergence — Still Unreconciled",
-        "body": "Batch success reached 100% (1,000/1,000) — a series best — while download success fell to 70.2%, a series worst, in the same run. Runs 1–3 all showed batch success tracking download success within a reasonable range. The CloudWatch investigation did not surface an explanation for this divergence; it remains open."
+        "title": "Download success 70.2% (series worst) — routing failures + file-server saturation",
+        "body": "Download success fell to 70.2%, breaking a three-run improvement streak (91.3% → 70.2%). CloudWatch, scoped to this run's batch ID (50446636), confirmed routing failures on 191 agents (19.1%) as a partial cause; the remaining file-partial download failures are still unexplained. The single Windows file server remains the download bottleneck under the ~25-loop, ~16.6h overnight load."
       },
       "batch": {
         "title": "Batch vs. Download Divergence — Still Unreconciled",
         "body": "Batch success reached 100% (1,000/1,000) — a series best — while download success fell to 70.2%, a series worst, in the same run. Runs 1–3 all showed batch success tracking download success within a reasonable range. The CloudWatch investigation did not surface an explanation for this divergence; it remains open."
+      },
+      "throughput": {
+        "title": "Peak throughput 68 Mb/s, collapsing to <20 Mb/s under sustained load",
+        "body": "Peak throughput reached ~68 Mb/s but collapsed to <20 Mb/s once the single file server saturated — the same server-side bottleneck seen since Run 1. The ~16.6h overnight window held the saturated state, dragging throughput ~32% below Run 3's ~100 Mb/s peak."
       }
     },
     "all": [
@@ -381,6 +385,14 @@ const RUN_ERRORS = {
       {
         "title": "Series Trajectory — Regression Breaks a Three-Run Improvement Streak",
         "body": "Connections: 63.5% → 99.99% → 100% → 100%. Downloads: 68.3% → 72.8% → 91.3% → 70.2% (dashboard). Batch: 85.7% → 77.2% → 89.1% → 100%. Connection and login planes remain solid, but Run 4 reverses three straight runs of download improvement. Part of the cause (routing failures) is now confirmed; the file-partial failure cause is not."
+      },
+      {
+        "title": "Download success 70.2% (series worst) — routing failures + file-server saturation",
+        "body": "Download success fell to 70.2%, breaking a three-run improvement streak (91.3% → 70.2%). CloudWatch, scoped to this run's batch ID (50446636), confirmed routing failures on 191 agents (19.1%) as a partial cause; the remaining file-partial download failures are still unexplained. The single Windows file server remains the download bottleneck under the ~25-loop, ~16.6h overnight load."
+      },
+      {
+        "title": "Peak throughput 68 Mb/s, collapsing to <20 Mb/s under sustained load",
+        "body": "Peak throughput reached ~68 Mb/s but collapsed to <20 Mb/s once the single file server saturated — the same server-side bottleneck seen since Run 1. The ~16.6h overnight window held the saturated state, dragging throughput ~32% below Run 3's ~100 Mb/s peak."
       }
     ]
   }
