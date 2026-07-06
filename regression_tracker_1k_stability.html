@@ -234,7 +234,7 @@
 
 <header>
   <h1>Solo — 1K stability regression tracker</h1>
-  <p>1K agent stability runs · Solo · filterable tracker + regression chart · earliest run pinned as baseline</p>
+  <p>filterable tracker + regression chart · earliest run pinned as baseline</p>
 </header>
 
 <!-- Shared control bar -->
@@ -309,18 +309,24 @@ const BW_OK = 100, BW_WARN = 60;
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const rawRuns = [
   {
-    date:"2026-07-03", ord:1, net:"u6on3HPusz", focus:"1K stability run 4",
-    dur:16.58, batch:100.0, connFail:0, dlOk:46907, dlFail:19877, bw:68,
+    date:"2026-07-03", ord:1, net:"u6on3HPusz",
+    focus:"1K stability run 4",
+    dur:16.58, batch:100.0, connFail:0,
+    dlOk:46907, dlFail:19877, bw:68,
     notes:"Connection Plane — Perfect 100% Two Runs Running · Confirmed: Routing Failures on 191 Agents (19.1%) · Batch vs. Download Divergence — Still Unreconciled"
   },
   {
-    date:"2026-06-20", ord:1, net:"u6on3HPusz", focus:"1K stability run 2",
-    dur:10.0, batch:77.2, connFail:1, dlOk:25119, dlFail:9385, bw:95,
+    date:"2026-06-20", ord:1, net:"u6on3HPusz",
+    focus:"1K stability run 2",
+    dur:10.0, batch:77.2, connFail:1,
+    dlOk:25119, dlFail:9385, bw:95,
     notes:"Low batch success 77.2% — AWS issue, no logs to confirm the reason. WireGuard Connection Plane Clean at 1K · Root Cause: File Server Saturation — curl Timeout code=124 · Throughput Stable — No Collapse, But Insufficient"
   },
   {
-    date:"2026-06-27", ord:1, net:"u6on3HPusz", focus:"1K stability run 3",
-    dur:12.37, batch:89.1, connFail:0, dlOk:60521, dlFail:5741, bw:100,
+    date:"2026-06-27", ord:1, net:"u6on3HPusz",
+    focus:"1K stability run 3",
+    dur:12.37, batch:89.1, connFail:0,
+    dlOk:60521, dlFail:5741, bw:100,
     notes:"Connection Plane — Perfect 100% for First Time · Progressive Throughput Degradation After ~18:00 · 5MB File Size Reduces Server Pressure — +18.5pp Downloads"
   },
 ];
@@ -350,10 +356,22 @@ const RUN_ERRORS = {
       }
     },
     "all": [
-      { "title": "Connection Plane — Perfect 100% for First Time", "body": "15,914 / 15,914 connections succeeded across all ~16 loops — zero failures. This is the first time connection success has reached 100% in the series. Run 1 had 36.5% failures (WireGuard pool exhaustion); Run 2 had 1 failure (99.99%). At 1K scale, the WireGuard connection infrastructure is fully proven stable over extended multi-hour runs." },
-      { "title": "Progressive Throughput Degradation After ~18:00", "body": "Throughput dropped from a stable 55–65 Mb/s band (10:00–17:00) to ~25 Mb/s sustained from 19:00 onward. This pattern did not appear in Run 2's 10-hour window, but emerged in Run 3's 12.5-hour run. The single Windows file server at 10.0.0.202 appears to degrade over sustained load — likely connection table exhaustion, memory pressure, or OS-level resource limits. Average download time rose correspondingly from ~7–10s (mid-run) to ~12–15s (after 18:00)." },
-      { "title": "5MB File Size Reduces Server Pressure — +18.5pp Downloads", "body": "Switching from 10MB (Runs 1–2) to 5MB files in Run 3 cut per-transfer data volume in half. With the same 60-second timeout, a 5MB transfer at only 1.5 Mb/s completes successfully — vs a 10MB transfer requiring 2.8 Mb/s. This reduced the download failure rate from 27.2% to 8.7%, the largest single-run improvement in the series. The file server is still the bottleneck, but smaller files expose it less." },
-      { "title": "Series Trajectory — Clear Improvement Run-over-Run", "body": "Connections: 63.5% → 99.99% → 100%. Downloads: 68.3% → 72.8% → 91.3%. Batch: 85.7% → 77.2% → 89.1%. The connection plane is production-ready at 1K scale. The file server bottleneck is confirmed as the sole remaining obstacle. Adding a second server is expected to push all metrics above 95% and validate the infrastructure for the 2K scale-up run." }
+      {
+        "title": "Connection Plane — Perfect 100% for First Time",
+        "body": "15,914 / 15,914 connections succeeded across all ~16 loops — zero failures. This is the first time connection success has reached 100% in the series. Run 1 had 36.5% failures (WireGuard pool exhaustion); Run 2 had 1 failure (99.99%). At 1K scale, the WireGuard connection infrastructure is fully proven stable over extended multi-hour runs."
+      },
+      {
+        "title": "Progressive Throughput Degradation After ~18:00",
+        "body": "Throughput dropped from a stable 55–65 Mb/s band (10:00–17:00) to ~25 Mb/s sustained from 19:00 onward. This pattern did not appear in Run 2's 10-hour window, but emerged in Run 3's 12.5-hour run. The single Windows file server at 10.0.0.202 appears to degrade over sustained load — likely connection table exhaustion, memory pressure, or OS-level resource limits. Average download time rose correspondingly from ~7–10s (mid-run) to ~12–15s (after 18:00)."
+      },
+      {
+        "title": "5MB File Size Reduces Server Pressure — +18.5pp Downloads",
+        "body": "Switching from 10MB (Runs 1–2) to 5MB files in Run 3 cut per-transfer data volume in half. With the same 60-second timeout, a 5MB transfer at only 1.5 Mb/s completes successfully — vs a 10MB transfer requiring 2.8 Mb/s. This reduced the download failure rate from 27.2% to 8.7%, the largest single-run improvement in the series. The file server is still the bottleneck, but smaller files expose it less."
+      },
+      {
+        "title": "Series Trajectory — Clear Improvement Run-over-Run",
+        "body": "Connections: 63.5% → 99.99% → 100%. Downloads: 68.3% → 72.8% → 91.3%. Batch: 85.7% → 77.2% → 89.1%. The connection plane is production-ready at 1K scale. The file server bottleneck is confirmed as the sole remaining obstacle. Adding a second server is expected to push all metrics above 95% and validate the infrastructure for the 2K scale-up run."
+      }
     ]
   },
   "2026-06-20|1": {
@@ -373,10 +391,22 @@ const RUN_ERRORS = {
       }
     },
     "all": [
-      { "title": "WireGuard Connection Plane Clean at 1K", "body": "10,329 / 10,330 connections succeeded — 99.99% success rate across 10 loops. The IP pool exhaustion seen in Run 1 does not trigger at 1K concurrency. Agent logs confirm 19 planned graceful disconnects (stateReasonCode: 7), normal reconnect cycling across 5 gateways (Miami + Frankfurt 1), and average tunnel session duration of ~51.7 min." },
-      { "title": "Root Cause: File Server Saturation — curl Timeout code=124", "body": "CloudWatch logs confirm all 9,385 download failures share a single cause: curl exit code 124 — the 60-second download timeout was reached. This is fundamentally different from Run 1's HTTP 500 / WireGuard pool errors. The file server at 10.0.0.202 accepts the TCP connection and begins the transfer, but stalls under concurrent load — delivering only ~843 KB of 10 MB before timing out. Successful downloads complete in 2.6–4.2s when the server isn't congested. The single Windows file server cannot sustain 1K+ concurrent 10MB transfers." },
-      { "title": "Throughput Stable — No Collapse, But Insufficient", "body": "Throughput held at 45–65 Mb/s across the full 10-hour window — a marked improvement over Run 1's collapse from 102 Mb/s to 20 Mb/s. Average download time was flat at ~15s with no progressive degradation. At 2K scale with doubled concurrent load the file server will saturate further. A second Windows file server must be added before Run 3." },
-      { "title": "Run 1 vs Run 2 — Different Root Causes", "body": "Run 1 download failures were caused by WireGuard connection failures (36.5% of agents had no tunnel, so no download was possible). Run 2 download failures are independent of the connection plane — tunnels are healthy, but the file server cannot serve all concurrent requests within the 60-second timeout. These are two separate infrastructure bottlenecks requiring separate fixes." }
+      {
+        "title": "WireGuard Connection Plane Clean at 1K",
+        "body": "10,329 / 10,330 connections succeeded — 99.99% success rate across 10 loops. The IP pool exhaustion seen in Run 1 does not trigger at 1K concurrency. Agent logs confirm 19 planned graceful disconnects (stateReasonCode: 7), normal reconnect cycling across 5 gateways (Miami + Frankfurt 1), and average tunnel session duration of ~51.7 min."
+      },
+      {
+        "title": "Root Cause: File Server Saturation — curl Timeout code=124",
+        "body": "CloudWatch logs confirm all 9,385 download failures share a single cause: curl exit code 124 — the 60-second download timeout was reached. This is fundamentally different from Run 1's HTTP 500 / WireGuard pool errors. The file server at 10.0.0.202 accepts the TCP connection and begins the transfer, but stalls under concurrent load — delivering only ~843 KB of 10 MB before timing out. Successful downloads complete in 2.6–4.2s when the server isn't congested. The single Windows file server cannot sustain 1K+ concurrent 10MB transfers."
+      },
+      {
+        "title": "Throughput Stable — No Collapse, But Insufficient",
+        "body": "Throughput held at 45–65 Mb/s across the full 10-hour window — a marked improvement over Run 1's collapse from 102 Mb/s to 20 Mb/s. Average download time was flat at ~15s with no progressive degradation. At 2K scale with doubled concurrent load the file server will saturate further. A second Windows file server must be added before Run 3."
+      },
+      {
+        "title": "Run 1 vs Run 2 — Different Root Causes",
+        "body": "Run 1 download failures were caused by WireGuard connection failures (36.5% of agents had no tunnel, so no download was possible). Run 2 download failures are independent of the connection plane — tunnels are healthy, but the file server cannot serve all concurrent requests within the 60-second timeout. These are two separate infrastructure bottlenecks requiring separate fixes."
+      }
     ]
   },
   "2026-07-03|1": {
@@ -400,10 +430,22 @@ const RUN_ERRORS = {
       }
     },
     "all": [
-      { "title": "Connection plane perfect — 100% two runs running", "body": "24,974 / 24,974 connections succeeded across ~25 loops — zero failures. Second consecutive 100% connection result, proving the 1K WireGuard connection infrastructure stable over two independent extended runs, including this ~16.6h overnight window." },
-      { "title": "Batch success 100% — series best", "body": "Batch success reached 100% (1,000 / 1,000) — the best batch result in the series." },
-      { "title": "Download success 70.2% (series worst) — routing failures + file-server saturation", "body": "Download success fell to 70.2%, breaking a three-run improvement streak (91.3% → 70.2%). CloudWatch, scoped to this run's batch ID (50446636), confirmed routing failures on 191 agents (19.1%) as a partial cause. The remaining download failures are file-partial (incomplete transfers). The single Windows file server remains the download bottleneck under the ~25-loop, ~16.6h overnight load." },
-      { "title": "Peak throughput 68 Mb/s, collapsing to <20 Mb/s under sustained load", "body": "Peak throughput reached ~68 Mb/s but collapsed to <20 Mb/s once the single file server saturated — the same server-side bottleneck seen since Run 1. The ~16.6h overnight window held the saturated state, dragging throughput ~32% below Run 3's ~100 Mb/s peak." }
+      {
+        "title": "Connection plane perfect — 100% two runs running",
+        "body": "24,974 / 24,974 connections succeeded across ~25 loops — zero failures. Second consecutive 100% connection result, proving the 1K WireGuard connection infrastructure stable over two independent extended runs, including this ~16.6h overnight window."
+      },
+      {
+        "title": "Batch success 100% — series best",
+        "body": "Batch success reached 100% (1,000 / 1,000) — the best batch result in the series."
+      },
+      {
+        "title": "Download success 70.2% (series worst) — routing failures + file-server saturation",
+        "body": "Download success fell to 70.2%, breaking a three-run improvement streak (91.3% → 70.2%). CloudWatch, scoped to this run's batch ID (50446636), confirmed routing failures on 191 agents (19.1%) as a partial cause. The remaining download failures are file-partial (incomplete transfers). The single Windows file server remains the download bottleneck under the ~25-loop, ~16.6h overnight load."
+      },
+      {
+        "title": "Peak throughput 68 Mb/s, collapsing to <20 Mb/s under sustained load",
+        "body": "Peak throughput reached ~68 Mb/s but collapsed to <20 Mb/s once the single file server saturated — the same server-side bottleneck seen since Run 1. The ~16.6h overnight window held the saturated state, dragging throughput ~32% below Run 3's ~100 Mb/s peak."
+      }
     ]
   }
 };
