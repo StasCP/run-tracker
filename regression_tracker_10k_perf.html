@@ -311,13 +311,6 @@ const BW_OK = 1000, BW_WARN = 600;
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const rawRuns = [
   {
-    date:"2026-05-18", ord:1, net:"QaWL9HOEOx",
-    focus:"Throughput test 2 — May 18",
-    dur:1.5, batch:92.8, connFail:189,
-    dlOk:35266, dlFail:7354, bw:750,
-    notes:"Connection Failures Reduced 83% — Duration Tuning Works · Higher Sustained Throughput — ~600 Mb/s Plateau · Broadest Tunnel Distribution in Series"
-  },
-  {
     date:"2026-05-20", ord:1, net:"QaWL9HOEOx",
     focus:"Throughput test 3 — pre-fix baseline",
     dur:1.58, batch:94.6, connFail:1231,
@@ -714,49 +707,6 @@ const RUN_ERRORS = {
       {
         "title": "Batch failure regression unexplained",
         "body": "63 batch failures in Run 1 vs 186 in Run 2 — anomalous given all other metrics improved. With 2× more agents successfully connecting in Run 2, the batch scheduler or result-reporting pipeline may have encountered higher concurrency. Requires log investigation but not a primary blocker."
-      }
-    ]
-  },
-  "2026-05-18|1": {
-    "report": "stability_report_throughput_test2_QaWL9HOEOx_9.html",
-    "byMetric": {
-      "conn": {
-        "title": "Connection Failures Reduced 83% — Duration Tuning Works",
-        "body": "189 failed connections (2.0%) — WireGuard IP pool pressure is the likely cause. Connection duration of 1,000s keeps lease request frequency manageable. Further increase toward 3,600s should eliminate remaining failures."
-      },
-      "dl": {
-        "title": "17.2% Download Failure Rate Persists",
-        "body": "7,354 failed 10MB downloads (17.2%). The 60s HTTPS timeout is too tight for 10MB files at ~600 Mb/s concurrency. Increasing to 120s is the recommended next step."
-      },
-      "throughput": {
-        "title": "Higher Sustained Throughput — ~600 Mb/s Plateau",
-        "body": "~600 Mb/s sustained average across the ~1h 30m run window. Wide and smooth plateau shape — no degradation or instability. The topology delivers consistent high throughput with 10MB files."
-      }
-    },
-    "all": [
-      {
-        "title": "Connection Failures Reduced 83% — Duration Tuning Works",
-        "body": "189 failed connections (2.0%) — WireGuard IP pool pressure is the likely cause. Connection duration of 1,000s keeps lease request frequency manageable. Further increase toward 3,600s should eliminate remaining failures."
-      },
-      {
-        "title": "Higher Sustained Throughput — ~600 Mb/s Plateau",
-        "body": "~600 Mb/s sustained average across the ~1h 30m run window. Wide and smooth plateau shape — no degradation or instability. The topology delivers consistent high throughput with 10MB files."
-      },
-      {
-        "title": "Broadest Tunnel Distribution in Series",
-        "body": "All 8 tunnels carrying load simultaneously with a wide stacked hump across the full plateau. LA (T301) dominant at ~1.8 MB/s peak — all 4 regions contributing."
-      },
-      {
-        "title": "189 Connection Failures Remain",
-        "body": "WireGuard IP pool not yet fully sized for 10,000 concurrent agents at this file size. Increasing connection duration toward 3,600s or expanding the pool should eliminate remaining failures."
-      },
-      {
-        "title": "17.2% Download Failure Rate Persists",
-        "body": "7,354 failed 10MB downloads (17.2%). The 60s HTTPS timeout is too tight for 10MB files at ~600 Mb/s concurrency. Increasing to 120s is the recommended next step."
-      },
-      {
-        "title": "Next Steps Identified",
-        "body": "Every metric improved: connection failures −83%, throughput +9%, download success +4.5pp, tunnel distribution smoother. Connection duration confirmed as the key tuning parameter for this test configuration."
       }
     ]
   },
