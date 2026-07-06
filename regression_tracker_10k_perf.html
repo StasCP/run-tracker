@@ -311,6 +311,13 @@ const BW_OK = 1000, BW_WARN = 600;
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const rawRuns = [
   {
+    date:"2026-05-13", ord:1, net:"r2Bp3KvAOL",
+    focus:"Performance Report — Stability Test 4 Regions · Evening Run",
+    dur:4.17, batch:67.5, connFail:899,
+    dlOk:152536, dlFail:1073, bw:850,
+    notes:"Low batch success 67.5% — AWS issue, no logs to confirm the reason. Highest Peak Throughput Yet · Zero Login Failures · Strong Download-Layer Reliability"
+  },
+  {
     date:"2026-05-20", ord:1, net:"QaWL9HOEOx",
     focus:"Throughput test 3 — pre-fix baseline",
     dur:1.58, batch:94.6, connFail:1231,
@@ -710,6 +717,61 @@ const RUN_ERRORS = {
       }
     ]
   },
+  "2026-05-13|1": {
+    "report": "stability_report_4region_10k_evening_8.html",
+    "byMetric": {
+      "conn": {
+        "title": "Connection Failures — Root Cause Confirmed (Recurrence)",
+        "body": "Agent logs confirm WireGuard IP pool exhaustion as the primary cause — identical to prior iterations. Control tower returns HTTP 500, agent fires serviceconnection_onerror, followed by a secondary ERR_SERVICE_NOT_FOUND cascade ~11 min later. Pool must be expanded before next run."
+      },
+      "dl": {
+        "title": "Strong Download-Layer Reliability",
+        "body": "99.30% download success rate (152,536 / 153,609) among connected agents. Slightly below the baseline's 99.997%, but at a dramatically higher volume of total transfer attempts."
+      },
+      "throughput": {
+        "title": "Highest Peak Throughput Yet",
+        "body": "~850 Mb/s peak surpasses the baseline's 383 Mb/s by 2.2×, confirming the 4-region topology scales effectively under sustained load. Average throughput of ~450 Mb/s also significantly exceeds baseline."
+      },
+      "batch": {
+        "title": "Batch Failure Rate Critical — 32.5%",
+        "body": "3,255 out of 10,000 batch jobs failed. This is the primary open issue. The failure pattern does not align with download-layer failures, pointing to batch scheduling, coordination, or AWS infrastructure as the likely source."
+      }
+    },
+    "all": [
+      {
+        "title": "Highest Peak Throughput Yet",
+        "body": "~850 Mb/s peak surpasses the baseline's 383 Mb/s by 2.2×, confirming the 4-region topology scales effectively under sustained load. Average throughput of ~450 Mb/s also significantly exceeds baseline."
+      },
+      {
+        "title": "Zero Login Failures",
+        "body": "All 32,759 login attempts succeeded with 0 failures — strong authentication plane stability across the full run window, consistent with the prior series."
+      },
+      {
+        "title": "Strong Download-Layer Reliability",
+        "body": "99.30% download success rate (152,536 / 153,609) among connected agents. Slightly below the baseline's 99.997%, but at a dramatically higher volume of total transfer attempts."
+      },
+      {
+        "title": "Batch Failure Rate Critical — 32.5%",
+        "body": "3,255 out of 10,000 batch jobs failed. This is the primary open issue. The failure pattern does not align with download-layer failures, pointing to batch scheduling, coordination, or AWS infrastructure as the likely source."
+      },
+      {
+        "title": "Connection Failures — Root Cause Confirmed (Recurrence)",
+        "body": "Agent logs confirm WireGuard IP pool exhaustion as the primary cause — identical to prior iterations. Control tower returns HTTP 500, agent fires serviceconnection_onerror, followed by a secondary ERR_SERVICE_NOT_FOUND cascade ~11 min later. Pool must be expanded before next run."
+      },
+      {
+        "title": "Frankfurt 4 Still Unreachable",
+        "body": "Frankfurt 4 tunnel traffic shows ~0 MB/s for the full run. This region continues to receive no agents. The blocking factor — likely WireGuard IP pool depletion affecting EU-bound agents — persists from the baseline run."
+      },
+      {
+        "title": "IPSec Load Sharing — Partial Effect Only",
+        "body": "Feature flag is confirmed active: secondary legs T102/T202 now carry traffic for the first time vs baseline. However, Chicago pair splits ~80/20 and Miami ~90/10 — far from the target 50/50 balance. Hash skew or session affinity is the likely cause. Requires tuning before next run."
+      },
+      {
+        "title": "Control Plane Resilient — 5 Operation Types",
+        "body": "Group management, firewall rules, ZTA application, DNS filtering, and scale unit changes all performed at peak load with zero impact on download success rate or throughput. Broader validation scope than the baseline, which did not include groups or DNS filtering."
+      }
+    ]
+  },
   "2026-05-20|2": {
     "report": "(manual)",
     "byMetric": {
@@ -730,7 +792,7 @@ const RUN_ERRORS = {
 
 // Per-run report-PDF links (run key -> Confluence attachment preview URL) —
 // filled by build_combined.py from report_urls.json.
-const REPORT_URLS = {"2026-05-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964390954%2Fthroughput%20test%20baseline%20pre%20fix%2020_05.pdf", "2026-05-26|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964063520%2Fstability_report_throughput_test3_QaWL9HOEOx_7.pdf", "2026-06-04|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964718471%2Fstability_report_10k_run1_QaWL9HOEOx_6.pdf", "2026-06-08|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963801473%2Fstability_report_10k_run7_QaWL9HOEOx_3.pdf", "2026-06-10|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964620340%2Fstability_report_10k_run8_6.pdf", "2026-06-23|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-23|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-25|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2966224907%2Freport_Cjbex1Pj7a_june25_run_7.pdf", "2026-05-20|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965242816%2Fstability_report_throughput_comparison_QaWL9HOEOx.pdf"};
+const REPORT_URLS = {"2026-05-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964390954%2Fthroughput%20test%20baseline%20pre%20fix%2020_05.pdf", "2026-05-26|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964063520%2Fstability_report_throughput_test3_QaWL9HOEOx_7.pdf", "2026-06-04|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964718471%2Fstability_report_10k_run1_QaWL9HOEOx_6.pdf", "2026-06-08|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963801473%2Fstability_report_10k_run7_QaWL9HOEOx_3.pdf", "2026-06-10|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964620340%2Fstability_report_10k_run8_6.pdf", "2026-06-23|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-23|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-25|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2966224907%2Freport_Cjbex1Pj7a_june25_run_7.pdf", "2026-05-20|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965242816%2Fstability_report_throughput_comparison_QaWL9HOEOx.pdf", "2026-05-13|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963704054%2Fstability_report_4region_10k_evening_8.pdf"};
 
 // ─── Enrichment (chronological — regression is vs previous run) ────────────────
 function key(r){ return r.date + '|' + r.ord; }
