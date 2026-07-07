@@ -321,7 +321,7 @@ const rawRuns = [
     focus:"1K stability run 3",
     dur:22.0, batch:51.4, connFail:0,
     dlOk:85777, dlFail:2198, bw:300,
-    notes:"Low batch success 51.4% — AWS issue, no logs to confirm the reason. Connection Plane — Perfect 100% Two Runs Running · Batch Success Collapse — Down 25.8pp from Run 2 · Sharp Late-Run Decline, Not a Dip"
+    notes:"Low batch success 51.4% — AWS issue, no logs to confirm the reason. Connection Plane — Perfect 100% Two Runs Running · Batch Success Collapse — Down 25.8pp from Run 2 · Sharp Late-Run Decline, Not a Dip · Throughput cutoff — ~300 Mb/s peak decayed to ~90–100 Mb/s by h10, then collapsed toward full unresponsiveness (60s timeouts) by the ~10.5h mark"
   },
   {
     date:"2026-07-03", ord:1, net:"u6on3HPusz",
@@ -636,9 +636,16 @@ function rowHtml(r, isBase){
 
   const dateLabel = r.date.slice(5,10) + (r.ord > 1 ? `<span class="ord">run ${r.ord}</span>` : '');
   const baseTag = isBase ? '<span class="bl-pill">baseline</span>' : '';
-  const findings = causes.length
+  let findings = causes.length
     ? `<div class="findings">${causes.map(c => `<div class="rc-item">${esc(c.title)}</div>`).join('')}</div>`
-    : (r.notes ? `<span class="notes-cell">${r.notes}</span>` : '<span class="ok-flag">—</span>');
+    : '';
+  // With no report-matched root cause, also surface the run's notes (report
+  // findings such as a throughput cutoff); drop the AWS note already shown above.
+  if (!rc.causes.length && r.notes) {
+    const extra = r.notes.replace(/^Low batch success.*?no logs to confirm the reason\.?\s*/i, '').trim();
+    if (extra) findings += `<div class="notes-cell">${esc(extra)}</div>`;
+  }
+  if (!findings) findings = '<span class="ok-flag">—</span>';
 
   const trCls = isBase ? 'baseline' : (r.anyReg ? 'regression' : '');
   return `<tr class="${trCls}">
