@@ -93,6 +93,7 @@
   .count { margin-left: auto; font-size: 14px; color: var(--text-3); font-variant-numeric: tabular-nums; }
   .table-note { font-size: 12px; color: var(--text-3); margin: 0 0 8px 2px; }
   .table-note strong { color: var(--accent); font-weight: 600; }
+  .chart-note { font-size: 12px; color: var(--text-3); margin: 2px 0 12px 2px; }
 
   /* ── Table ── */
   .tbl-wrap {
@@ -185,6 +186,8 @@
   }
   .ok-flag { color: var(--text-3); }
   .reg-flag.has-tip { cursor: help; }
+  /* No hover tooltip (e.g. batch-success regressions) → amber, not red. */
+  .reg-flag.no-tip { background: var(--warn-bg); color: var(--warn); }
   /* Floating tooltip lives on <body> (position:fixed) so it escapes the table's
      overflow container and the iframe's fixed height, and is clamped into view. */
   #rc-tip {
@@ -299,6 +302,7 @@
   <div class="control-group">
     <label class="group-label">Series</label>
     <div class="checkboxes" id="series-controls"></div>
+    <p class="chart-note">Click a series to show or hide it on the chart. Hover a point for that run's details.</p>
   </div>
   <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
 </div>
@@ -949,7 +953,7 @@ function rowHtml(r, isBase){
     <td class="num ${cellCls(r.dlRateReg)}"><span class="badge ${dlCls(r.dlRate)}">${r.dlRate.toFixed(1)}%</span></td>
     <td class="num ${cellCls(r.bwReg)}"><span class="badge ${bwCls(r.bw)}">${fmt(r.bw)} Mb/s</span></td>
     <td>${msgs.length
-      ? `<span class="reg-flag${rc.causes.length ? ' has-tip' : ''}">⚠ ${msgs.join(' · ')}${causeTooltip(rc)}</span>`
+      ? `<span class="reg-flag${rc.causes.length ? ' has-tip' : ' no-tip'}">⚠ ${msgs.join(' · ')}${causeTooltip(rc)}</span>`
       : '<span class="ok-flag">—</span>'}</td>
     <td>${findings}</td>
   </tr>`;
