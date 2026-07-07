@@ -317,6 +317,13 @@ const BW_OK = 100, BW_WARN = 60;
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const rawRuns = [
   {
+    date:"2026-07-02", ord:1, net:"u6on3HPusz",
+    focus:"1K stability run 3",
+    dur:22.0, batch:51.4, connFail:0,
+    dlOk:85777, dlFail:2198, bw:300,
+    notes:"Low batch success 51.4% — AWS issue, no logs to confirm the reason. Connection Plane — Perfect 100% Two Runs Running · Batch Success Collapse — Down 25.8pp from Run 2 · Sharp Late-Run Decline, Not a Dip"
+  },
+  {
     date:"2026-07-03", ord:1, net:"u6on3HPusz",
     focus:"1K stability run 4",
     dur:16.58, batch:100.0, connFail:0,
@@ -455,13 +462,52 @@ const RUN_ERRORS = {
         "body": "Peak throughput reached ~68 Mb/s but collapsed to <20 Mb/s once the single file server saturated — the same server-side bottleneck seen since Run 1. The ~16.6h overnight window held the saturated state, dragging throughput ~32% below Run 3's ~100 Mb/s peak."
       }
     ]
+  },
+  "2026-07-02|1": {
+    "report": "stability_report_1k_run3_u6on3HPusz_14.html",
+    "byMetric": {
+      "conn": {
+        "title": "Connection Plane — Perfect 100% Two Runs Running",
+        "body": "18,122 / 18,122 connections succeeded across ~18 loops — zero failures. This is the second consecutive 100% connection result, following Run 2. At 1K scale, the WireGuard connection infrastructure is now proven stable over two independent extended multi-hour runs, including this run's ~22-hour overnight window."
+      },
+      "dl": {
+        "title": "Batch Success Collapse — Down 25.8pp from Run 2",
+        "body": "Batch success fell from 77.2% (Run 2) to 51.4% (Run 3) — the sharpest single-run batch regression in the series apart from Run 1's pool exhaustion. Since download success (97.5%) stayed high, batch is the metric that actually captures the severity of this run's file-server issue."
+      },
+      "throughput": {
+        "title": "Sharp Late-Run Decline, Not a Dip",
+        "body": "Throughput declines sharply through the reviewed window, trending toward full unresponsiveness by the ~10.5-hour mark. Run 2's degraded state was still a stable 45–65 Mb/s band; Run 3 shows the file server heading toward complete unresponsiveness rather than merely struggling under load."
+      },
+      "batch": {
+        "title": "Batch Success Collapse — Down 25.8pp from Run 2",
+        "body": "Batch success fell from 77.2% (Run 2) to 51.4% (Run 3) — the sharpest single-run batch regression in the series apart from Run 1's pool exhaustion. Since download success (97.5%) stayed high, batch is the metric that actually captures the severity of this run's file-server issue."
+      }
+    },
+    "all": [
+      {
+        "title": "Connection Plane — Perfect 100% Two Runs Running",
+        "body": "18,122 / 18,122 connections succeeded across ~18 loops — zero failures. This is the second consecutive 100% connection result, following Run 2. At 1K scale, the WireGuard connection infrastructure is now proven stable over two independent extended multi-hour runs, including this run's ~22-hour overnight window."
+      },
+      {
+        "title": "Batch Success Collapse — Down 25.8pp from Run 2",
+        "body": "Batch success fell from 77.2% (Run 2) to 51.4% (Run 3) — the sharpest single-run batch regression in the series apart from Run 1's pool exhaustion. Since download success (97.5%) stayed high, batch is the metric that actually captures the severity of this run's file-server issue."
+      },
+      {
+        "title": "Sharp Late-Run Decline, Not a Dip",
+        "body": "Throughput declines sharply through the reviewed window, trending toward full unresponsiveness by the ~10.5-hour mark. Run 2's degraded state was still a stable 45–65 Mb/s band; Run 3 shows the file server heading toward complete unresponsiveness rather than merely struggling under load."
+      },
+      {
+        "title": "Failure Signature Shifted Mid-Run",
+        "body": "Early in the run, failures measure 15–30s — consistent with the server resetting connections under concurrent load. Toward the end of the actively-reviewed window (~10.5h), failures shift to full 60.00s timeouts (code=124) plus a recurring unhealthy tunnel route — evidence the server stopped responding entirely rather than continuing to degrade gradually."
+      }
+    ]
   }
 };
 // ─── end RUN_ERRORS ───
 
 // Per-run report-PDF links (run key -> Confluence attachment preview URL) —
 // filled by build_combined.py from report_urls.json.
-const REPORT_URLS = {"2026-06-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965963124%2Fstability_report_1k_run2_u6on3HPusz_6.pdf", "2026-06-27|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965242769%2Fstability_report_1k_run3_u6on3HPusz_8.pdf", "2026-07-03|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2964161638%2Fstability_report_1k_run4_u6on3HPusz_5.pdf"};
+const REPORT_URLS = {"2026-06-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965963124%2Fstability_report_1k_run2_u6on3HPusz_6.pdf", "2026-06-27|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965242769%2Fstability_report_1k_run3_u6on3HPusz_8.pdf", "2026-07-03|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2964161638%2Fstability_report_1k_run4_u6on3HPusz_5.pdf", "2026-07-02|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2972680202%2Fstability_report_1k_run3_u6on3HPusz_14.pdf"};
 
 // ─── Enrichment (chronological — regression is vs previous run) ────────────────
 function key(r){ return r.date + '|' + r.ord; }
