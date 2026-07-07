@@ -934,9 +934,16 @@ function rowHtml(r, isBase){
 
   const dateLabel = r.date.slice(5,10) + (r.ord > 1 ? `<span class="ord">run ${r.ord}</span>` : '');
   const baseTag = isBase ? '<span class="bl-pill">baseline</span>' : '';
-  const findings = causes.length
+  let findings = causes.length
     ? `<div class="findings">${causes.map(c => `<div class="rc-item">${esc(c.title)}</div>`).join('')}</div>`
-    : (r.notes ? `<span class="notes-cell">${r.notes}</span>` : '<span class="ok-flag">—</span>');
+    : '';
+  // With no report-matched root cause, also surface the run's notes (report
+  // findings such as a throughput cutoff); drop the AWS note already shown above.
+  if (!rc.causes.length && r.notes) {
+    const extra = r.notes.replace(/^Low batch success.*?no logs to confirm the reason\.?\s*/i, '').trim();
+    if (extra) findings += `<div class="notes-cell">${esc(extra)}</div>`;
+  }
+  if (!findings) findings = '<span class="ok-flag">—</span>';
 
   const trCls = isBase ? 'baseline' : (r.anyReg ? 'regression' : '');
   return `<tr class="${trCls}">
