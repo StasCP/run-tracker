@@ -321,7 +321,7 @@ const rawRuns = [
     focus:"Performance Report — Stability Series Run 5 — u6on3HPusz",
     dur:10.58, batch:32.7, connFail:17,
     dlOk:19323, dlFail:8266, bw:120,
-    notes:"Low batch success 32.7% — AWS issue, no logs to confirm the reason. Imported from report."
+    notes:"Batch success 32.7% — 673/1,000 batch jobs failed, 100% attributable to EC2 Spot capacity reclamation (spot-no-capacity host terminations, 9 clusters, 11:51–15:19 UTC). Confirmed from logs. Imported from report."
   },
   {
     date:"2026-07-02", ord:1, net:"u6on3HPusz",
@@ -511,8 +511,19 @@ const RUN_ERRORS = {
   },
   "2026-07-15|1": {
     "report": "stability_report_1k_run5_u6on3HPusz_1.html",
-    "byMetric": {},
-    "all": []
+    "byMetric": {
+      "batch": {
+        "title": "Batch collapse — EC2 Spot capacity reclamation",
+        "body": "673 of 1,000 batch jobs failed (32.7% success), 100% attributable to EC2 Spot capacity reclamation across 9 termination clusters in the 11:51–15:19 UTC window; the largest single burst (336 terminations, 14:14:11–15:19 UTC) accounts for ~half on its own. Confirmed from host-termination logs (spot-no-capacity) — an infrastructure capacity issue in the Spot pool, not an application or file-server defect.",
+        "investigated": true
+      }
+    },
+    "all": [
+      {
+        "title": "Batch collapse — EC2 Spot capacity reclamation",
+        "body": "673 of 1,000 batch jobs failed (32.7% success), 100% attributable to EC2 Spot capacity reclamation across 9 termination clusters in the 11:51–15:19 UTC window. Confirmed from host-termination logs (spot-no-capacity)."
+      }
+    ]
   }
 };
 // ─── end RUN_ERRORS ───
@@ -584,9 +595,13 @@ function rootCauses(r){
   if (!r.errors) return { causes: [], all: [] };
   const batchRed = batchCls(r.batch) === 'err';
   const seen = new Set(), causes = [];
+  const batchInvestigated = !!(r.errors.byMetric.batch && r.errors.byMetric.batch.investigated);
   ['passReg','dlRateReg','connFailReg','dlFailReg','bwReg'].forEach(f => {
     if (!r[f]) return;
-    if (f === 'passReg' && batchRed) return;
+    // Red-batch runs suppress the batch root cause UNLESS it has been
+    // investigated (a confirmed reason marked investigated:true in the overlay);
+    // investigated batch fails render as a normal red regression with reason.
+    if (f === 'passReg' && batchRed && !batchInvestigated) return;
     const err = r.errors.byMetric[METRIC_FOR_REG[f]];
     if (err && !seen.has(err.title)) { seen.add(err.title); causes.push(err); }
   });
@@ -643,7 +658,9 @@ function rowHtml(r, isBase){
   const msgs = regSummary(r);
   const rc = rootCauses(r);
   const causes = rc.causes.slice();
-  if (batchCls(r.batch) === 'err' && !causes.some(c => /AWS issue/i.test(c.title)))
+  // Fallback AWS note only for a red-batch run whose cause was NOT investigated.
+  const batchInvestigated = !!(r.errors && r.errors.byMetric.batch && r.errors.byMetric.batch.investigated);
+  if (batchCls(r.batch) === 'err' && !batchInvestigated && !causes.some(c => /AWS issue/i.test(c.title)))
     causes.push({ title: `Low batch success ${r.batch.toFixed(1)}% — AWS issue, no logs to confirm the reason` });
 
   const dateLabel = r.date.slice(5,10) + (r.ord > 1 ? `<span class="ord">run ${r.ord}</span>` : '');
