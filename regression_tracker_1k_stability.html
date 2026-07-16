@@ -317,6 +317,13 @@ const BW_OK = 100, BW_WARN = 60;
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const rawRuns = [
   {
+    date:"2026-07-15", ord:1, net:"u6on3HPusz",
+    focus:"Performance Report — Stability Series Run 5 — u6on3HPusz",
+    dur:10.58, batch:32.7, connFail:17,
+    dlOk:19323, dlFail:8266, bw:120,
+    notes:"Low batch success 32.7% — AWS issue, no logs to confirm the reason. Imported from report."
+  },
+  {
     date:"2026-07-02", ord:1, net:"u6on3HPusz",
     focus:"1K stability run 3",
     dur:22.0, batch:51.4, connFail:0,
@@ -501,6 +508,11 @@ const RUN_ERRORS = {
         "body": "Early in the run, failures measure 15–30s — consistent with the server resetting connections under concurrent load. Toward the end of the actively-reviewed window (~10.5h), failures shift to full 60.00s timeouts (code=124) plus a recurring unhealthy tunnel route — evidence the server stopped responding entirely rather than continuing to degrade gradually."
       }
     ]
+  },
+  "2026-07-15|1": {
+    "report": "stability_report_1k_run5_u6on3HPusz_1.html",
+    "byMetric": {},
+    "all": []
   }
 };
 // ─── end RUN_ERRORS ───
