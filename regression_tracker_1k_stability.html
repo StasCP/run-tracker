@@ -317,6 +317,13 @@ const BW_OK = 100, BW_WARN = 60;
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const rawRuns = [
   {
+    date:"2026-07-18", ord:1, net:"u6on3HPusz",
+    focus:"1k stability run 6",
+    dur:13.33, batch:96.2, connFail:62,
+    dlOk:37048, dlFail:7886, bw:95,
+    notes:"Batch Reconciliation — Run 4's Open Question Finally Closed · Time-Range Scoping Flag — 2 of 38 Batch Failures Pre-Date the Run Window · Spot Terminations Concentrated on 2 Hosts, High Array-Index Range"
+  },
+  {
     date:"2026-07-15", ord:1, net:"u6on3HPusz",
     focus:"1k stability run 5",
     dur:10.58, batch:32.7, connFail:17,
@@ -524,13 +531,60 @@ const RUN_ERRORS = {
         "body": "673 of 1,000 batch jobs failed (32.7% success), 100% attributable to EC2 Spot capacity reclamation across 9 termination clusters in the 11:51–15:19 UTC window. Confirmed from host-termination logs (spot-no-capacity)."
       }
     ]
+  },
+  "2026-07-18|1": {
+    "report": "stability_report_1k_run6_u6on3HPusz-automated_4.html",
+    "byMetric": {
+      "conn": {
+        "title": "Connection Failures — Three Tight Clusters, Not Random Noise",
+        "body": "All 62 vpn-status is-disconnect events confirmed via CloudWatch, falling into three sharp bursts: 43 events in 104s at 12:23:02–12:24:46 UTC, 8 in 70s at 14:38:33–14:39:43 UTC, and 11 in 103s at 18:52:34–18:54:17 UTC. Each agent disconnects exactly once — no repeat offenders — and none overlap with the 38 Spot-terminated batch agents, ruling out a shared cause with the batch failures. The embedded message clock again ran a fixed +3h ahead of @timestamp, same offset Run 4 found. Correlation against server-side latency spikes attempted for the 12:23 cluster; result was inconclusive within this run's log data (see CloudWatch Log Analysis)."
+      },
+      "dl": {
+        "title": "Late-Run Download Outage — ~19:15 UTC to Run End",
+        "body": "Raw log sampling at 19:00, 19:15, and 21:30 UTC confirms a hard cutover: successful downloads present at 19:00, then absent in every sample from 19:15 through the end of the run (~2h45m). The outage period is uniformly no-partial-file (zero-byte failures) pinned at measured_time=48.01 — a different timeout ceiling than the 60.01 seen earlier in the run. Broad, non-repeating agent spread each time points to a file-server-side failure rather than a client-side one. Not visible on the throughput or avg-download-time charts, likely because those metrics reflect all wire traffic and successful-download averages respectively, neither of which isolates a zero-success window the way a raw failure count does."
+      },
+      "throughput": {
+        "title": "Late-Run Download Outage — ~19:15 UTC to Run End",
+        "body": "Raw log sampling at 19:00, 19:15, and 21:30 UTC confirms a hard cutover: successful downloads present at 19:00, then absent in every sample from 19:15 through the end of the run (~2h45m). The outage period is uniformly no-partial-file (zero-byte failures) pinned at measured_time=48.01 — a different timeout ceiling than the 60.01 seen earlier in the run. Broad, non-repeating agent spread each time points to a file-server-side failure rather than a client-side one. Not visible on the throughput or avg-download-time charts, likely because those metrics reflect all wire traffic and successful-download averages respectively, neither of which isolates a zero-success window the way a raw failure count does."
+      },
+      "batch": {
+        "title": "Batch Reconciliation — Run 4's Open Question Finally Closed",
+        "body": "The AWS Batch console's Succeeded/Failed table (962 / 38) and the array-job status log (38 confirmed host-terminated events, array indices up to 999) agree exactly, confirming the array size at 1,000. This is a clean 1:1 reconciliation — the first in the series where batch dashboard and log-derived counts have matched without discrepancy."
+      }
+    },
+    "all": [
+      {
+        "title": "Batch Reconciliation — Run 4's Open Question Finally Closed",
+        "body": "The AWS Batch console's Succeeded/Failed table (962 / 38) and the array-job status log (38 confirmed host-terminated events, array indices up to 999) agree exactly, confirming the array size at 1,000. This is a clean 1:1 reconciliation — the first in the series where batch dashboard and log-derived counts have matched without discrepancy."
+      },
+      {
+        "title": "Time-Range Scoping Flag — 2 of 38 Batch Failures Pre-Date the Run Window",
+        "body": "Array indices 879 and 905 were terminated at 06:09:48–06:09:51 UTC, roughly 2.5 hours before the confirmed run start (08:40:00 UTC). This is the exact issue flagged repeatedly in Run 4's process lessons. It doesn't change the total (still ties to 38), but it should be resolved with an explicitly time-boxed query before the next run, so the \"in-window\" figure can be trusted independently of the console total."
+      },
+      {
+        "title": "Spot Terminations Concentrated on 2 Hosts, High Array-Index Range",
+        "body": "36 of the 38 in-window failures came from just two EC2 hosts: i-0464fb0e137073e02 (25 terminations, mostly in a sub-second burst at 10:19:36 UTC) and i-04ff8143a12f04c5c (12 terminations in a burst at 10:33:32–33 UTC). Nearly all failed indices fall in the 879–999 range — the top 12% of the array — suggesting later-scheduled jobs were more exposed to the Spot capacity crunch than earlier ones."
+      },
+      {
+        "title": "Series Trajectory — Broad, Shallow Degradation Rather Than One Dominant Failure",
+        "body": "Connections: 63.5% → 99.99% → 100% → 100% → 99.60%. Downloads: 68.3% → 72.8% → 91.3% → 70.2% → 82.45%. Batch: 85.7% → 77.2% → 89.1% → 100% (unreconciled) → 96.2% (confirmed). Unlike Run 4, where downloads carried nearly the whole regression, Run 6 shows small dips spread across connections, downloads, and batch — none in crisis, none at series-best either."
+      },
+      {
+        "title": "Connection Failures — Three Tight Clusters, Not Random Noise",
+        "body": "All 62 vpn-status is-disconnect events confirmed via CloudWatch, falling into three sharp bursts: 43 events in 104s at 12:23:02–12:24:46 UTC, 8 in 70s at 14:38:33–14:39:43 UTC, and 11 in 103s at 18:52:34–18:54:17 UTC. Each agent disconnects exactly once — no repeat offenders — and none overlap with the 38 Spot-terminated batch agents, ruling out a shared cause with the batch failures. The embedded message clock again ran a fixed +3h ahead of @timestamp, same offset Run 4 found. Correlation against server-side latency spikes attempted for the 12:23 cluster; result was inconclusive within this run's log data (see CloudWatch Log Analysis)."
+      },
+      {
+        "title": "Late-Run Download Outage — ~19:15 UTC to Run End",
+        "body": "Raw log sampling at 19:00, 19:15, and 21:30 UTC confirms a hard cutover: successful downloads present at 19:00, then absent in every sample from 19:15 through the end of the run (~2h45m). The outage period is uniformly no-partial-file (zero-byte failures) pinned at measured_time=48.01 — a different timeout ceiling than the 60.01 seen earlier in the run. Broad, non-repeating agent spread each time points to a file-server-side failure rather than a client-side one. Not visible on the throughput or avg-download-time charts, likely because those metrics reflect all wire traffic and successful-download averages respectively, neither of which isolates a zero-success window the way a raw failure count does."
+      }
+    ]
   }
 };
 // ─── end RUN_ERRORS ───
 
 // Per-run report-PDF links (run key -> Confluence attachment preview URL) —
 // filled by build_combined.py from report_urls.json.
-const REPORT_URLS = {"2026-06-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965963124%2Fstability_report_1k_run2_u6on3HPusz_6.pdf", "2026-06-27|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965242769%2Fstability_report_1k_run3_u6on3HPusz_8.pdf", "2026-07-03|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2964161638%2Fstability_report_1k_run4_u6on3HPusz_5.pdf", "2026-07-02|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2972680202%2Fstability_report_1k_run3_u6on3HPusz_14.pdf", "2026-07-15|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3014067090%2Fstability_report_1k_run5_u6on3HPusz_1.pdf"};
+const REPORT_URLS = {"2026-06-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965963124%2Fstability_report_1k_run2_u6on3HPusz_6.pdf", "2026-06-27|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965242769%2Fstability_report_1k_run3_u6on3HPusz_8.pdf", "2026-07-03|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2964161638%2Fstability_report_1k_run4_u6on3HPusz_5.pdf", "2026-07-02|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2972680202%2Fstability_report_1k_run3_u6on3HPusz_14.pdf", "2026-07-15|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3014067090%2Fstability_report_1k_run5_u6on3HPusz_1.pdf", "2026-07-18|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3025551288%2Fstability_report_1k_run6_u6on3HPusz-automated_4.pdf"};
 
 // ─── Enrichment (chronological — regression is vs previous run) ────────────────
 function key(r){ return r.date + '|' + r.ord; }
