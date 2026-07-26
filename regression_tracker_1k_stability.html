@@ -317,6 +317,13 @@ const BW_OK = 100, BW_WARN = 60;
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const rawRuns = [
   {
+    date:"2026-07-24", ord:1, net:"u6on3HPusz",
+    focus:"1k stability run 7",
+    dur:12.17, batch:62.7, connFail:1,
+    dlOk:28783, dlFail:6636, bw:88,
+    notes:"Low batch success 62.7% — AWS issue, no logs to confirm the reason. Batch Failures Structured Around Dense Host Packing — New This Run · Batch Reconciliation — Exact Match, No Volume Gap · Time-Range Scoping — Recurring From Run 6, Now 5× Larger"
+  },
+  {
     date:"2026-07-18", ord:1, net:"u6on3HPusz",
     focus:"1k stability run 6",
     dur:13.33, batch:96.2, connFail:62,
@@ -576,6 +583,49 @@ const RUN_ERRORS = {
       {
         "title": "Late-Run Download Outage — ~19:15 UTC to Run End",
         "body": "Raw log sampling at 19:00, 19:15, and 21:30 UTC confirms a hard cutover: successful downloads present at 19:00, then absent in every sample from 19:15 through the end of the run (~2h45m). The outage period is uniformly no-partial-file (zero-byte failures) pinned at measured_time=48.01 — a different timeout ceiling than the 60.01 seen earlier in the run. Broad, non-repeating agent spread each time points to a file-server-side failure rather than a client-side one. Not visible on the throughput or avg-download-time charts, likely because those metrics reflect all wire traffic and successful-download averages respectively, neither of which isolates a zero-success window the way a raw failure count does."
+      }
+    ]
+  },
+  "2026-07-24|1": {
+    "report": "stability_report_1k_run7_u6on3HPusz-automated_1.html",
+    "byMetric": {
+      "conn": {
+        "title": "Routing/Connection Layer Ruled Out for the Download Dip",
+        "body": "Per-minute counts of routing/tunnel-management log lines (route-table adds, \"added successfully\" events) across 10:00–11:15 UTC show a smooth, gentle hump (~2,300 → ~2,675 → ~2,300/min) with no cliff, spike, or dead zone anywhere in the range — and no distinguishing feature at the 10:15–11:00 dip window specifically. This rules out a tunnel-level disruption as the download dip's cause."
+      },
+      "dl": {
+        "title": "Retry-Counting Methodology Trap — Caught Before It Reached the Report",
+        "body": "An initial raw per-minute count of Verified size log lines suggested a ~88–94% failure rate sustained across 10:00–11:14 UTC — which would have implied a much larger, longer outage than the dashboard's whole-run 18.74% failure rate could explain. Raw-line inspection showed each download logs one Verified size line per retry attempt (up to 8 per download), so attempt-level counts vastly overstate true failure. Re-computed on a per-download (successes vs. total attempts) basis, the real signal is a baseline ~10–12% → trough ~5–6% dip, not a 90% collapse. Same lesson as Run 4 and Run 6: surprising raw numbers need a mechanism check before they go in a report."
+      },
+      "batch": {
+        "title": "Batch Reconciliation — Exact Match, No Volume Gap",
+        "body": "The raw array-job status log contains exactly 373 rows, 373 unique array indices, matching the dashboard's reported 373 failures exactly. Unlike Run 6, where aggregate log volume (70,477 events) didn't reconcile with the dashboard total (44,934), this run's batch data ties out cleanly with no open volume question."
+      }
+    },
+    "all": [
+      {
+        "title": "Batch Failures Structured Around Dense Host Packing — New This Run",
+        "body": "Of 373 failed array indices, 336 (90.1%) come from just 7 hosts, each losing exactly 48 co-located agents in a sub-10-second burst: i-0969e0302f8ddea82 (13:19), i-00c6d9e574f320f6e (14:14), i-094ca368e8736ef54 and i-000a816c0367f91eb (both 14:19, within 5 minutes of the 14:14 event), i-0dadfb6e4977d2256 (15:50), i-0276375165ac65668 (16:03), and i-0f75a9b3671af0c91 (16:59). The remaining 37 failures are isolated single-agent losses across 37 distinct hosts. A single Spot interruption now carries a 48-agent blast radius — worth reviewing instance-packing density against acceptable risk before Run 8."
+      },
+      {
+        "title": "Batch Reconciliation — Exact Match, No Volume Gap",
+        "body": "The raw array-job status log contains exactly 373 rows, 373 unique array indices, matching the dashboard's reported 373 failures exactly. Unlike Run 6, where aggregate log volume (70,477 events) didn't reconcile with the dashboard total (44,934), this run's batch data ties out cleanly with no open volume question."
+      },
+      {
+        "title": "Time-Range Scoping — Recurring From Run 6, Now 5× Larger",
+        "body": "10 of 373 batch failures (two 5-event clusters, ~07:22–07:23 and ~08:09–08:10 UTC) are timestamped 1.5–2.5 hours before the confirmed run start (09:50:00 UTC). Run 6 saw 2 such events; this run saw 10. Total still ties to 373. Same category of scoping issue flagged in Run 6 and Run 4 before it — recommend a standard time-boxed query template."
+      },
+      {
+        "title": "Retry-Counting Methodology Trap — Caught Before It Reached the Report",
+        "body": "An initial raw per-minute count of Verified size log lines suggested a ~88–94% failure rate sustained across 10:00–11:14 UTC — which would have implied a much larger, longer outage than the dashboard's whole-run 18.74% failure rate could explain. Raw-line inspection showed each download logs one Verified size line per retry attempt (up to 8 per download), so attempt-level counts vastly overstate true failure. Re-computed on a per-download (successes vs. total attempts) basis, the real signal is a baseline ~10–12% → trough ~5–6% dip, not a 90% collapse. Same lesson as Run 4 and Run 6: surprising raw numbers need a mechanism check before they go in a report."
+      },
+      {
+        "title": "Routing/Connection Layer Ruled Out for the Download Dip",
+        "body": "Per-minute counts of routing/tunnel-management log lines (route-table adds, \"added successfully\" events) across 10:00–11:15 UTC show a smooth, gentle hump (~2,300 → ~2,675 → ~2,300/min) with no cliff, spike, or dead zone anywhere in the range — and no distinguishing feature at the 10:15–11:00 dip window specifically. This rules out a tunnel-level disruption as the download dip's cause."
+      },
+      {
+        "title": "Download Dip: Contention, Not a New Fault Regime",
+        "body": "Zero-byte vs. partial-transfer failure composition was checked minute-by-minute across 10:20–11:39 UTC: the split holds steady at ~78–82% zero-byte / ~18–22% partial throughout — including during the 10:24–10:34 trough. Unlike Run 6's late-run outage, which showed the failure character itself shift (mixed → 100% zero-byte with a different timeout ceiling), this run's dip shows the same background failure mix simply becoming more frequent for a while. Consistent with intensified request contention on the single file server rather than a discrete fault — still needs the same file-server-side check outstanding since Run 6 to confirm."
       }
     ]
   }
