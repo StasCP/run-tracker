@@ -598,8 +598,9 @@ const RUN_ERRORS = {
         "body": "An initial raw per-minute count of Verified size log lines suggested a ~88–94% failure rate sustained across 10:00–11:14 UTC — which would have implied a much larger, longer outage than the dashboard's whole-run 18.74% failure rate could explain. Raw-line inspection showed each download logs one Verified size line per retry attempt (up to 8 per download), so attempt-level counts vastly overstate true failure. Re-computed on a per-download (successes vs. total attempts) basis, the real signal is a baseline ~10–12% → trough ~5–6% dip, not a 90% collapse. Same lesson as Run 4 and Run 6: surprising raw numbers need a mechanism check before they go in a report."
       },
       "batch": {
-        "title": "Batch Reconciliation — Exact Match, No Volume Gap",
-        "body": "The raw array-job status log contains exactly 373 rows, 373 unique array indices, matching the dashboard's reported 373 failures exactly. Unlike Run 6, where aggregate log volume (70,477 events) didn't reconcile with the dashboard total (44,934), this run's batch data ties out cleanly with no open volume question."
+        "title": "Batch Failures Structured Around Dense Host Packing — New This Run",
+        "body": "Of 373 failed array indices, 336 (90.1%) come from just 7 hosts, each losing exactly 48 co-located agents in a sub-10-second burst (spot interruptions across 13:19–16:59 UTC). The remaining 37 failures are isolated single-agent losses across 37 distinct hosts. A single Spot interruption now carries a 48-agent blast radius — worth reviewing instance-packing density against acceptable risk before Run 8.",
+        "investigated": true
       }
     },
     "all": [
