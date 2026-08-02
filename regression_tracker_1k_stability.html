@@ -718,7 +718,7 @@ const runs = rawRuns.slice()
     const bwPctChange = prev && prev.bw > 0 ? +(((r.bw - prev.bw) / prev.bw) * 100).toFixed(0) : null;
     const bwReg       = bwPctChange !== null && bwPctChange < -REG_TH.bw;
 
-    const isReg  = passReg;                                    // chart red-dot trigger (batch)
+    const isReg  = passReg;                                    // kept for compat; dots are per-series via SERIES[].regKey
     const anyReg = passReg || dlRateReg || connFailReg || dlFailReg || bwReg;
     const label  = r.date.slice(5) + (r.ord > 1 ? ` r${r.ord}` : '');
 
@@ -892,12 +892,14 @@ function renderTable(){
 }
 
 // ─── Chart (from trend_chart) ──────────────────────────────────────────────────
+// regKey = the per-run regression flag that reddens THIS series' point, so a
+// throughput regression marks the throughput line rather than the batch line.
 const SERIES = [
-  { key:'batch',     label:'Batch success %',    color:'#1a7a3c', yAxis:'yPct'   },
-  { key:'failCount', label:'Conn failures',      color:'#c0392b', yAxis:'yCount' },
-  { key:'dlFail',    label:'Download failures',  color:'#e67e22', yAxis:'yCount' },
-  { key:'dlRate',    label:'Download success %', color:'#8e44ad', yAxis:'yPct'   },
-  { key:'bw',        label:'Peak throughput',    color:'#0097a7', yAxis:'yBw'    },
+  { key:'batch',     label:'Batch success %',    color:'#1a7a3c', yAxis:'yPct',   regKey:'passReg'     },
+  { key:'failCount', label:'Conn failures',      color:'#c0392b', yAxis:'yCount', regKey:'connFailReg' },
+  { key:'dlFail',    label:'Download failures',  color:'#e67e22', yAxis:'yCount', regKey:'dlFailReg'   },
+  { key:'dlRate',    label:'Download success %', color:'#8e44ad', yAxis:'yPct',   regKey:'dlRateReg'   },
+  { key:'bw',        label:'Peak throughput',    color:'#0097a7', yAxis:'yBw',    regKey:'bwReg'       },
 ];
 const visibility = { batch:true, failCount:true, dlFail:true, dlRate:true, bw:true };
 
@@ -906,14 +908,17 @@ const regressionPlugin = {
   afterDatasetsDraw(chart){
     const { ctx, scales } = chart;
     const data = chart._filteredRuns || [];
-    const xScale = scales.x, yScale = scales.yPct;
-    if (!yScale || !visibility.batch) return;
+    const xScale = scales.x;
     data.forEach((r, i) => {
-      if (!r.isReg) return;
-      const x = xScale.getPixelForTick(i), y = yScale.getPixelForValue(r.batch);
-      ctx.save(); ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2);
-      ctx.fillStyle = '#c0392b'; ctx.fill();
-      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+      SERIES.forEach(s => {
+        if (!visibility[s.key] || !r[s.regKey]) return;
+        const yScale = scales[s.yAxis];
+        if (!yScale) return;
+        const x = xScale.getPixelForTick(i), y = yScale.getPixelForValue(r[s.key]);
+        ctx.save(); ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2);
+        ctx.fillStyle = '#c0392b'; ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+      });
     });
   }
 };
@@ -925,8 +930,8 @@ function buildDatasets(data){
     data: data.map(r => r[s.key]),
     borderColor: s.color,
     backgroundColor: s.color + '22',
-    pointBackgroundColor: data.map(r => (s.key === 'batch' && r.isReg) ? '#c0392b' : s.color),
-    pointRadius: data.map(r => (s.key === 'batch' && r.isReg) ? 7 : 4),
+    pointBackgroundColor: data.map(r => r[s.regKey] ? '#c0392b' : s.color),
+    pointRadius: data.map(r => r[s.regKey] ? 7 : 4),
     pointHoverRadius: 7, borderWidth: 2, tension: 0.3,
     yAxisID: s.yAxis, hidden: !visibility[s.key], fill: false,
   }));
@@ -959,7 +964,8 @@ function initChart(){
                 `DL success:      ${r.dlRate.toFixed(1)}%`,
                 `Peak throughput: ${r.bw.toLocaleString()} Mb/s`,
               ];
-              if (r.isReg){ lines.push(''); lines.push(`⚠ Regression: batch success dropped ${Math.abs(r.regDelta)}% — from ${(r.batch - r.regDelta).toFixed(1)}% to ${r.batch.toFixed(1)}%`); }
+              const regs = regSummary(r);
+              if (regs.length){ lines.push(''); regs.forEach(m => lines.push(`⚠ ${m}`)); }
               return lines;
             },
             label: () => null,
