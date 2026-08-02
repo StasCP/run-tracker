@@ -328,7 +328,7 @@ const rawRuns = [
     focus:"1k stability run 7",
     dur:12.17, batch:62.7, connFail:1,
     dlOk:28783, dlFail:6636, bw:88,
-    notes:"Low batch success 62.7% — AWS issue, no logs to confirm the reason. Batch Failures Structured Around Dense Host Packing — New This Run · Batch Reconciliation — Exact Match, No Volume Gap · Time-Range Scoping — Recurring From Run 6, Now 5× Larger"
+    notes:"Batch success 62.7% — series worst, down 33.5pp from Run 6's 96.2%. 373 of 1,000 array jobs failed; 336 (90.1%) came from 7 burst events each terminating exactly 48 co-located agents on a single Spot host (13:19, 14:14, 14:19 ×2, 15:50, 16:03, 16:59 UTC), three of them inside a 5-minute span that removed 144 agents at once. The remaining 37 were isolated single-agent losses across 37 distinct hosts. Confirmed from logs — the raw array-job status export holds exactly 373 unique indices, an exact match to the dashboard with no volume gap. Caveat: 10 of the 373 are timestamped 1.5–2.5h before the run window started. Batch Failures Structured Around Dense Host Packing — New This Run · Batch Reconciliation — Exact Match, No Volume Gap · Time-Range Scoping — Recurring From Run 6, Now 5× Larger"
   },
   {
     date:"2026-07-18", ord:1, net:"u6on3HPusz",
