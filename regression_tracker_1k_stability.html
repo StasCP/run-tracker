@@ -139,6 +139,14 @@
     text-align: center;
   }
   thead th.txt { text-align: left; cursor: default; }
+  /* Sub-label under a column title. Opts out of the header's uppercase/tracking
+     so it reads as a quiet instruction rather than part of the title. */
+  thead th .th-hint {
+    display: block; margin-top: 3px;
+    text-transform: none; letter-spacing: 0;
+    font-size: 10px; font-weight: 400; font-style: italic;
+    color: var(--text-3); opacity: .85;
+  }
   thead th:hover:not(.txt) { color: var(--text); background: #eae8e3; }
   thead th.sorted { color: var(--accent); }
   thead th .arr { display: inline-block; margin-left: 3px; opacity: .35; font-size: 10px; }
@@ -317,7 +325,7 @@
         <th data-key="dlrate">Download<br>success %<span class="arr">↕</span></th>
         <th data-key="bw">Peak<br>throughput<span class="arr">↕</span></th>
         <th class="txt">Regression</th>
-        <th class="txt">Status &amp; Findings</th>
+        <th class="txt">Status &amp; Findings<span class="th-hint">(hover to see root cause)</span></th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
