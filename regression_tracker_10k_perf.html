@@ -27,6 +27,11 @@
     --err:       #9b1c1c;
     --err-bg:    #fde8e8;
     --reg-bg:    #fff0f0;
+    /* Status tints for the dark #rc-tip panel — same hues as --ok/--warn/--err,
+       lightened so they read against a near-black background. */
+    --tip-ok:    #7ddba3;
+    --tip-warn:  #f5c463;
+    --tip-err:   #ff9b9b;
     --baseline-bg:   #f0eeea;
     --baseline-border: #c8c6bc;
     --mono:      "JetBrains Mono", "Fira Mono", "Consolas", monospace;
@@ -134,6 +139,14 @@
     text-align: center;
   }
   thead th.txt { text-align: left; cursor: default; }
+  /* Sub-label under a column title. Opts out of the header's uppercase/tracking
+     so it reads as a quiet instruction rather than part of the title. */
+  thead th .th-hint {
+    display: block; margin-top: 3px;
+    text-transform: none; letter-spacing: 0;
+    font-size: 10px; font-weight: 400; font-style: italic;
+    color: var(--text-3); opacity: .85;
+  }
   thead th:hover:not(.txt) { color: var(--text); background: #eae8e3; }
   thead th.sorted { color: var(--accent); }
   thead th .arr { display: inline-block; margin-left: 3px; opacity: .35; font-size: 10px; }
@@ -200,11 +213,33 @@
     pointer-events: none;   /* never intercept the cursor / block interaction */
   }
   .tip-head { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #9a978f; margin-bottom: 8px; }
+  /* Status-panel tooltips colour the subject line to match the row's icon. */
+  .tip-head.tip-ok   { color: var(--tip-ok);   }
+  .tip-head.tip-warn { color: var(--tip-warn); }
+  .tip-head.tip-err  { color: var(--tip-err);  }
   .tip-item { margin-bottom: 10px; font-size: 13px; line-height: 1.45; }
   .tip-item:last-child { margin-bottom: 0; }
   .tip-title { font-weight: 600; color: #fff; }
   .tip-hit .tip-title { color: #ff9b9b; }
   .tip-body { color: #b9b6ae; font-size: 12px; margin-top: 2px; }
+
+  /* Per-parameter status panel in the Status & Findings column. Each row shows
+     only icon + parameter name; the value and root cause are revealed on hover
+     via the shared floating #rc-tip, so nothing is clipped by the table's
+     overflow container or the embedding iframe. Icon colour comes from each
+     parameter's own threshold helper, so it always matches its table badge. */
+  .param-status { font-size: 12px; }
+  .ps-item { padding: 1px 0; line-height: 1.55; }
+  .ps-icon { font-weight: 700; display: inline-block; width: 13px; text-align: center; }
+  .ps-name { color: var(--text-2); }
+  /* Dotted underline marks the rows that carry a hover tooltip. */
+  .ps-item.has-tip { cursor: help; }
+  .ps-item.has-tip .ps-name { border-bottom: 1px dotted var(--text-3); }
+  .ps-item.has-tip:hover .ps-name { color: var(--text); border-bottom-color: var(--text-2); }
+  .ps-ok   { color: var(--ok);   }
+  .ps-warn { color: var(--warn); }
+  .ps-err  { color: var(--err);  }
+  .ps-sep  { height: 1px; background: var(--border); margin: 8px 0 6px; }
 
   .findings { font-size: 12px; color: var(--text-2); }
   .rc-item { padding: 1px 0; line-height: 1.4; }
@@ -289,8 +324,8 @@
         <th data-key="dlfl">Downloads<br>failed<span class="arr">↕</span></th>
         <th data-key="dlrate">Download<br>success %<span class="arr">↕</span></th>
         <th data-key="bw">Peak<br>throughput<span class="arr">↕</span></th>
-        <th class="txt">Regression</th>
-        <th class="txt">Findings</th>
+        <th class="txt">Regression<span class="th-hint">(hover to see root cause)</span></th>
+        <th class="txt">Status &amp; Findings<span class="th-hint">(hover to see root cause)</span></th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -403,16 +438,16 @@ const RUN_ERRORS = {
     "report": "stability_report_throughput_test3_QaWL9HOEOx.html",
     "byMetric": {
       "conn": {
-        "title": "Connection Failures — Primary Open Issue",
-        "body": "189 failed connections (2.0%) — WireGuard IP pool pressure is the likely cause. Connection duration of 1,000s keeps lease request frequency manageable. Further increase toward 3,600s should eliminate remaining failures."
+        "title": "Connection failures — the main open issue",
+        "body": "189 connections failed (2.0%), most likely WireGuard IP pool pressure. The 1,000-second connection duration keeps lease requests manageable; raising it toward 3,600 seconds should remove the rest."
       },
       "dl": {
-        "title": "10.0% Download Failure Rate — Improved",
-        "body": "4,250 failed 10MB downloads (17.2%). The 60s HTTPS timeout is too tight for 10MB files at ~600 Mb/s concurrency. Increasing to 120s is the recommended next step."
+        "title": "Download failures improved to 10.0%",
+        "body": "4,250 of the 10MB downloads failed. The 60-second HTTPS timeout is too tight for 10MB files at this concurrency. Fix: raise it to 120 seconds."
       },
       "throughput": {
-        "title": "~650 Mb/s Sustained Plateau — Smooth Profile",
-        "body": "~600 Mb/s sustained average across the ~1h 30m run window. Wide and smooth plateau shape — no degradation or instability. The topology delivers consistent high throughput with 10MB files."
+        "title": "Steady ~650 Mb/s plateau",
+        "body": "About 600 Mb/s sustained across the 1.5-hour run window, with a wide smooth plateau and no degradation or instability. The topology delivers consistent throughput with 10MB files."
       }
     },
     "all": [
@@ -446,20 +481,20 @@ const RUN_ERRORS = {
     "report": "stability_report_10k_run1_QaWL9HOEOx_6.html",
     "byMetric": {
       "conn": {
-        "title": "29.1% Connection Failures — WireGuard IP Pool Exhaustion Confirmed",
-        "body": "2,865 failed connections. Agent log evidence: failed leasing ip: can't get ip from set: wireguard:ippool, since the pool is empty. The gateway rejects the peer immediately — the agent retries for ~600s before giving up. The 600s seen in CloudWatch is retry duration after rejection, not a handshake timeout. Root cause: WireGuard ippool undersized for 10K concurrent connections on network QaWL9HOEOx (subnet 10.250.0.0/16)."
+        "title": "29.1% of connections failed — IP pool exhausted",
+        "body": "2,865 connections failed because the WireGuard IP pool was empty, confirmed in agent logs. The gateway rejects the peer immediately and the agent then retries for about 600 seconds before giving up — so the 600s figure is retry time, not a handshake timeout. Fix: the pool is undersized for 10K concurrent connections."
       },
       "dl": {
-        "title": "24.2% Download Failures — HTTPS 60s Timeout Confirmed",
-        "body": "7,313 failed downloads. Every failure hits measured_time=60.01s. file-partial: received 0.02–6.97 MB of 10MB. no-partial-file: 0.0 MB received. Both confirm the 60s wall. Independent of the 2,865 connection failures — different agents, different cause."
+        "title": "24.2% of downloads hit the 60-second timeout",
+        "body": "7,313 downloads failed, every one at the 60-second wall. Some received part of the file (0.02–6.97 MB of 10 MB), others nothing at all. Unrelated to the connection failures — different agents, different cause."
       },
       "throughput": {
-        "title": "Strong Throughput on Connected Agents",
-        "body": "Peak ~580 Mb/s, sustained ~400 Mb/s over the active phase. Average download time ~25–32s on successful transfers. The network is not bandwidth-constrained. Failures are entirely timeout-driven — fixing both timeouts should produce materially better results without any infrastructure change."
+        "title": "Throughput strong where agents connected",
+        "body": "Peak ~580 Mb/s, sustained ~400 Mb/s, with successful downloads taking 25–32 seconds. The network is not bandwidth-limited: the failures are entirely timeout-driven, so fixing both timeouts should improve results with no infrastructure change."
       },
       "batch": {
-        "title": "Login Reliability & Batch Success — Best in Series",
-        "body": "9,840 / 9,841 logins succeeded. Batch: 9,840 / 10,000 (98.4%) — best result in the series. The login and job scheduling planes are stable at 10K scale. Failures are in the connection and download planes only."
+        "title": "Logins and batch best in series — 98.4%",
+        "body": "9,840 of 9,841 logins succeeded and 9,840 of 10,000 batch jobs completed — the best result in the series. Login and job scheduling are stable at 10K; the failures sit in the connection and download layers only."
       }
     },
     "all": [
@@ -521,20 +556,20 @@ const RUN_ERRORS = {
     "report": "stability_report_10k_run8_6.html",
     "byMetric": {
       "conn": {
-        "title": "Network Connection Failure Rate — 38.6% — Worsening Run-Over-Run",
-        "body": "3,788 of 9,808 network connections failed. The rate has increased from 34% in Run 7 to 38.6% in Run 8. Root cause has not been confirmed across either run. The worsening trend makes this the highest-priority investigation item before the next 10K run."
+        "title": "Connection failures worsening — now 38.6%",
+        "body": "3,788 of 9,808 connections failed, up from 34% in the previous run. The cause has not been confirmed in either run. The worsening trend makes this the top investigation item before the next 10K run."
       },
       "dl": {
-        "title": "Late-Run Download Time Spike — ~40s at 14:10",
-        "body": "Average download time rose to ~40s near 14:10, up from the ~28–30s peak observed in Run 7. The spike coincides with the end of the active download period and may reflect fewer concurrent connections concentrating remaining load. Pattern warrants monitoring in subsequent runs."
+        "title": "Download times spiked to ~40s late in the run",
+        "body": "Average download time rose to about 40 seconds near 14:10, up from a 28–30 second peak previously. It coincides with the end of the download period and may simply reflect fewer connections carrying the remaining load. Worth monitoring."
       },
       "throughput": {
-        "title": "Throughput Ceiling Unchanged at ~600 Mb/s — Goal Not Achieved",
-        "body": "Run 8 goal was to increase throughput by doubling per-agent file count (5 × 10MB → 10 × 10MB). Peak throughput remained at ~600 Mb/s — identical to Run 7. The ceiling was not raised by the file count change, indicating the limit is imposed at the connection or network layer. Total download volume increased (36,966 vs 23,625 in Run 7), but peak bandwidth was unchanged."
+        "title": "Throughput ceiling unchanged at ~600 Mb/s",
+        "body": "The goal was to raise throughput by doubling files per agent (5 → 10 × 10MB). Peak stayed at ~600 Mb/s, identical to the previous run, so the limit sits at the connection or network layer rather than the file count. Total download volume did rise (36,966 vs 23,625)."
       },
       "batch": {
-        "title": "Batch Failures — 1,574 of 10,000 — Root Cause Required",
-        "body": "1,574 of 10,000 batch jobs failed in this run, compared to 60 (0.6%) in Run 7. This is a significant regression. Failures are pre-connection, but the root cause must be identified and resolved before the next run. This is a new open item not present in prior runs."
+        "title": "Batch failures jumped to 1,574 — cause needed",
+        "body": "1,574 of 10,000 jobs failed, against 60 in the previous run — a significant regression. The failures happen before connection. A new open item that must be root-caused before the next run."
       }
     },
     "all": [
@@ -584,20 +619,20 @@ const RUN_ERRORS = {
     "report": "report_Cjbex1Pj7a_run1_run2_june23_4.html",
     "byMetric": {
       "conn": {
-        "title": "Run 2 improvement cascaded from tunnel distribution",
-        "body": "Better ECMP spread → more gateways receiving load → 98% connection success → more concurrent downloads → ×4.2 throughput. The entire improvement is downstream of tunnel distribution. Fix ECMP uniformly and all remaining metrics follow proportionally."
+        "title": "Every gain traced back to tunnel spread",
+        "body": "Better traffic spread across gateways lifted connection success to 98%, which allowed more concurrent downloads and a 4.2× throughput gain. The whole improvement follows from tunnel distribution: fix that evenly and the rest follows."
       },
       "dl": {
-        "title": "60s download timeout budget — deprioritised",
-        "body": "Average download time 10–38s in Run 2. No Mode 3 timeout failures observed at this connection scale. Revisit only if download times increase under higher load."
+        "title": "Download timeout no longer a concern",
+        "body": "Downloads took 10–38 seconds in Run 2 with no timeout failures at this connection scale. Revisit only if times rise under heavier load."
       },
       "throughput": {
-        "title": "MVP throughput target: 1,250 Mb/s vs 7,200 Mb/s (17%)",
-        "body": "Significant progress — up from 4% in Run 1. Path is clear: unblocked by ECMP uniformity fix. No further action until ECMP is resolved."
+        "title": "Throughput at 17% of the MVP target",
+        "body": "1,250 Mb/s against a 7,200 Mb/s target — real progress, up from 4% in Run 1. Blocked on the tunnel-spread fix; no further action until that is resolved."
       },
       "batch": {
-        "title": "Batch failure regression unexplained",
-        "body": "63 batch failures in Run 1 vs 186 in Run 2 — anomalous given all other metrics improved. With 2× more agents successfully connecting in Run 2, the batch scheduler or result-reporting pipeline may have encountered higher concurrency. Requires log investigation but not a primary blocker."
+        "title": "Batch failures up, reason unexplained",
+        "body": "63 failures in Run 1 against 186 in Run 2 — odd, since every other metric improved. With twice as many agents connecting in Run 2, the batch scheduler or result reporting may have struggled with the higher concurrency. Needs log investigation, but not a blocker."
       }
     },
     "all": [
@@ -659,20 +694,20 @@ const RUN_ERRORS = {
     "report": "report_Cjbex1Pj7a_run1_run2_june23_4.html",
     "byMetric": {
       "conn": {
-        "title": "Run 2 improvement cascaded from tunnel distribution",
-        "body": "Better ECMP spread → more gateways receiving load → 98% connection success → more concurrent downloads → ×4.2 throughput. The entire improvement is downstream of tunnel distribution. Fix ECMP uniformly and all remaining metrics follow proportionally."
+        "title": "Every gain traced back to tunnel spread",
+        "body": "Better traffic spread across gateways lifted connection success to 98%, which allowed more concurrent downloads and a 4.2× throughput gain. The whole improvement follows from tunnel distribution: fix that evenly and the rest follows."
       },
       "dl": {
-        "title": "60s download timeout budget — deprioritised",
-        "body": "Average download time 10–38s in Run 2. No Mode 3 timeout failures observed at this connection scale. Revisit only if download times increase under higher load."
+        "title": "Download timeout no longer a concern",
+        "body": "Downloads took 10–38 seconds in Run 2 with no timeout failures at this connection scale. Revisit only if times rise under heavier load."
       },
       "throughput": {
-        "title": "MVP throughput target: 1,250 Mb/s vs 7,200 Mb/s (17%)",
-        "body": "Significant progress — up from 4% in Run 1. Path is clear: unblocked by ECMP uniformity fix. No further action until ECMP is resolved."
+        "title": "Throughput at 17% of the MVP target",
+        "body": "1,250 Mb/s against a 7,200 Mb/s target — real progress, up from 4% in Run 1. Blocked on the tunnel-spread fix; no further action until that is resolved."
       },
       "batch": {
-        "title": "Batch failure regression unexplained",
-        "body": "63 batch failures in Run 1 vs 186 in Run 2 — anomalous given all other metrics improved. With 2× more agents successfully connecting in Run 2, the batch scheduler or result-reporting pipeline may have encountered higher concurrency. Requires log investigation but not a primary blocker."
+        "title": "Batch failures up, reason unexplained",
+        "body": "63 failures in Run 1 against 186 in Run 2 — odd, since every other metric improved. With twice as many agents connecting in Run 2, the batch scheduler or result reporting may have struggled with the higher concurrency. Needs log investigation, but not a blocker."
       }
     },
     "all": [
@@ -734,20 +769,20 @@ const RUN_ERRORS = {
     "report": "stability_report_4region_10k_evening_8.html",
     "byMetric": {
       "conn": {
-        "title": "Connection Failures — Root Cause Confirmed (Recurrence)",
-        "body": "Agent logs confirm WireGuard IP pool exhaustion as the primary cause — identical to prior iterations. Control tower returns HTTP 500, agent fires serviceconnection_onerror, followed by a secondary ERR_SERVICE_NOT_FOUND cascade ~11 min later. Pool must be expanded before next run."
+        "title": "Connections failed — WireGuard IP pool exhausted",
+        "body": "Agent logs confirm the WireGuard IP pool ran out of addresses, the same cause as earlier runs. The control plane rejects the connection, and a secondary error cascade follows about 11 minutes later. Fix: expand the pool before the next run."
       },
       "dl": {
-        "title": "Strong Download-Layer Reliability",
-        "body": "99.30% download success rate (152,536 / 153,609) among connected agents. Slightly below the baseline's 99.997%, but at a dramatically higher volume of total transfer attempts."
+        "title": "Downloads reliable — 99.3%",
+        "body": "152,536 of 153,609 downloads succeeded among connected agents. Marginally below the baseline's 99.997%, but at far higher volume."
       },
       "throughput": {
-        "title": "Highest Peak Throughput Yet",
-        "body": "~850 Mb/s peak surpasses the baseline's 383 Mb/s by 2.2×, confirming the 4-region topology scales effectively under sustained load. Average throughput of ~450 Mb/s also significantly exceeds baseline."
+        "title": "Best throughput so far — 850 Mb/s",
+        "body": "Peak of ~850 Mb/s is 2.2× the baseline's 383 Mb/s, and average throughput of ~450 Mb/s also beats baseline. Confirms the 4-region topology scales under sustained load."
       },
       "batch": {
-        "title": "Batch Failure Rate Critical — 32.5%",
-        "body": "3,255 out of 10,000 batch jobs failed. This is the primary open issue. The failure pattern does not align with download-layer failures, pointing to batch scheduling, coordination, or AWS infrastructure as the likely source."
+        "title": "Batch failed at 32.5% — cause unknown",
+        "body": "3,255 of 10,000 batch jobs failed. The pattern does not match the download failures, so the likely source is batch scheduling, coordination, or AWS infrastructure. Still the primary open issue."
       }
     },
     "all": [
@@ -789,8 +824,8 @@ const RUN_ERRORS = {
     "report": "(manual)",
     "byMetric": {
       "batch": {
-        "title": "Batch failure regression — suspected AWS issue",
-        "body": "Batch success dropped to 82.8%. Suspected AWS-side issue during the run; no agent logs were available to confirm the root cause."
+        "title": "Batch dropped to 82.8% — suspected AWS issue",
+        "body": "Suspected an AWS-side problem during the run, but no agent logs were available to confirm the cause."
       }
     },
     "all": [
@@ -839,7 +874,7 @@ const runs = rawRuns.slice()
     const bwPctChange = prev && prev.bw > 0 ? +(((r.bw - prev.bw) / prev.bw) * 100).toFixed(0) : null;
     const bwReg       = bwPctChange !== null && bwPctChange < -REG_TH.bw;
 
-    const isReg  = passReg;                                    // chart red-dot trigger (batch)
+    const isReg  = passReg;                                    // kept for compat; dots are per-series via SERIES[].regKey
     const anyReg = passReg || dlRateReg || connFailReg || dlFailReg || bwReg;
     const label  = r.date.slice(5) + (r.ord > 1 ? ` r${r.ord}` : '');
 
@@ -861,6 +896,98 @@ function dlCls(d){ return d >= 98 ? 'ok' : d >= 85 ? 'warn' : 'err'; }
 function bwCls(bw){ return bw >= BW_OK ? 'ok' : bw >= BW_WARN ? 'warn' : 'err'; }
 function connCls(r){ const p = r.connFail / AGENTS * 100; return p < 5 ? 'ok' : p < 20 ? 'warn' : 'err'; }
 function cellCls(bad){ return bad ? 'bad-cell' : ''; }
+
+// Downloads-failed status. Failure rate is the exact inverse of download success,
+// so these bands mirror dlCls (>15% failed ⇔ <85% success, >2% ⇔ <98%) and the
+// row always agrees with the Download success % column badge. A regression flag
+// forces red as well, even when the absolute rate is still low.
+function dlFailCls(r){
+  if (r.dlFailReg || r.dlFailRate > 15) return 'err';
+  return r.dlFailRate > 2 ? 'warn' : 'ok';
+}
+
+const STATUS_ICON = { ok: '✓', warn: '⚠', err: '✗' };
+
+// Per-parameter status rows for the Status & Findings column, in table-column order.
+// Duration and Downloads-succeeded are intentionally excluded: neither has a
+// pass/fail threshold, so an icon would assert a verdict we can't support.
+// `metric` is the RUN_ERRORS.byMetric bucket whose root cause explains this
+// parameter — used to caption a failing (red) row.
+function paramStatuses(r){
+  return [
+    { name: 'Batch success',       metric: 'batch',      cls: batchCls(r.batch), val: r.batch.toFixed(1) + '%' },
+    { name: 'Connection failures', metric: 'conn',       cls: connCls(r),        val: fmt(r.connFail) },
+    // Download success % is the inverse of the failure rate, so only the failure
+    // view is listed here — both still have their own table columns.
+    { name: 'Downloads failed',    metric: 'dl',         cls: dlFailCls(r),      val: `${fmt(r.dlFail)} (${r.dlFailRate.toFixed(1)}%)` },
+    { name: 'Peak throughput',     metric: 'throughput', cls: bwCls(r.bw),       val: fmt(r.bw) + ' Mb/s' },
+  ];
+}
+
+// Condensed root-cause caption for a failing parameter. Full text stays in the
+// root-cause list below the panel and in the hover tooltip.
+// The generic "AWS issue" stand-in for an un-investigated low batch result. It
+// describes the batch parameter, so the panel discloses it under Batch success
+// instead of listing it separately below.
+function batchPlaceholder(r){
+  const investigated = !!(r.errors && r.errors.byMetric && r.errors.byMetric.batch
+                          && r.errors.byMetric.batch.investigated);
+  if (batchCls(r.batch) !== 'err' || investigated) return null;
+  return {
+    title: `Batch low at ${r.batch.toFixed(1)}% — cause never confirmed`,
+    body: 'Most likely an AWS capacity issue, but no logs were captured for this run, so the cause was never confirmed.'
+  };
+}
+
+function causeFor(r, metric){
+  const c = r.errors && r.errors.byMetric && r.errors.byMetric[metric];
+  return (c && c.title) ? { title: c.title.trim(), body: (c.body || '').trim() } : null;
+}
+
+// Resolved panel rows: which parameters are expandable and which cause each one
+// discloses. Single source of truth for both the rendered panel and the
+// de-duplication against the root-cause list below, so the two cannot drift.
+// Downloads-failed and Download-success share the 'dl' bucket, so a cause is
+// attached once per panel — to the first non-healthy parameter that maps to it.
+function panelRows(r){
+  const claimed = new Set();
+  const add = (list, c) => {
+    if (c && c.title && !claimed.has(c.title)) { claimed.add(c.title); list.push(c); }
+  };
+  return paramStatuses(r).map(p => {
+    const causes = [];
+    add(causes, causeFor(r, p.metric));
+    if (p.metric === 'batch') add(causes, batchPlaceholder(r));
+    // Every parameter carries a tooltip — it always has a value worth showing, and
+    // any recorded finding sits inside its own parameter rather than a separate list.
+    return Object.assign({}, p, { causes });
+  });
+}
+
+function panelCauseTitles(r){
+  const s = new Set();
+  panelRows(r).forEach(x => x.causes.forEach(c => s.add(c.title)));
+  return s;
+}
+
+function statusPanel(r){
+  const rows = panelRows(r).map(p => {
+    const head = `<span class="ps-icon ps-${p.cls}">${STATUS_ICON[p.cls]}</span>` +
+                 `<span class="ps-name">${esc(p.name)}</span>`;
+    // Tooltip body reuses the .tip-* classes, which are styled for #rc-tip's dark
+    // panel. Bodies are included here — they were not shown by the old drop-down.
+    const empty = p.cls === 'ok' ? 'No findings recorded.' : 'No root cause recorded.';
+    const items = p.causes.length
+      ? p.causes.map(c => `<div class="tip-item"><div class="tip-title">${esc(c.title)}</div>` +
+          (c.body ? `<div class="tip-body">${esc(c.body)}</div>` : '') + `</div>`).join('')
+      : `<div class="tip-item"><div class="tip-body">${empty}</div></div>`;
+    const tip = `<span class="tip-data" hidden>` +
+                  `<div class="tip-head tip-${p.cls}">${esc(p.name)} — ${esc(p.val)}</div>${items}` +
+                `</span>`;
+    return `<div class="ps-item has-tip">${head}${tip}</div>`;
+  });
+  return `<div class="param-status">${rows.join('')}</div>`;
+}
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ─── Root causes / regression summary (from trend_chart) ───────────────────────
@@ -870,9 +997,13 @@ function rootCauses(r){
   if (!r.errors) return { causes: [], all: [] };
   const batchRed = batchCls(r.batch) === 'err';
   const seen = new Set(), causes = [];
+  const batchInvestigated = !!(r.errors.byMetric.batch && r.errors.byMetric.batch.investigated);
   ['passReg','dlRateReg','connFailReg','dlFailReg','bwReg'].forEach(f => {
     if (!r[f]) return;
-    if (f === 'passReg' && batchRed) return;
+    // Red-batch runs suppress the batch root cause UNLESS it has been
+    // investigated (a confirmed reason marked investigated:true in the overlay);
+    // investigated batch fails render as a normal red regression with reason.
+    if (f === 'passReg' && batchRed && !batchInvestigated) return;
     const err = r.errors.byMetric[METRIC_FOR_REG[f]];
     if (err && !seen.has(err.title)) { seen.add(err.title); causes.push(err); }
   });
@@ -929,21 +1060,27 @@ function rowHtml(r, isBase){
   const msgs = regSummary(r);
   const rc = rootCauses(r);
   const causes = rc.causes.slice();
-  if (batchCls(r.batch) === 'err' && !causes.some(c => /AWS issue/i.test(c.title)))
-    causes.push({ title: `Low batch success ${r.batch.toFixed(1)}% — AWS issue, no logs to confirm the reason` });
+  // Fallback AWS note only for a red-batch run whose cause was NOT investigated.
+  // The low-batch "AWS issue" note is no longer appended here — batchPlaceholder()
+  // routes it into the Batch success row of the status panel instead.
 
   const dateLabel = r.date.slice(5,10) + (r.ord > 1 ? `<span class="ord">run ${r.ord}</span>` : '');
   const baseTag = isBase ? '<span class="bl-pill">baseline</span>' : '';
-  let findings = causes.length
-    ? `<div class="findings">${causes.map(c => `<div class="rc-item">${esc(c.title)}</div>`).join('')}</div>`
+  // Causes already captioned against a failing parameter in the status panel are
+  // dropped here, so the same title never appears twice in one cell.
+  const captioned = panelCauseTitles(r);
+  const listCauses = causes.filter(c => !captioned.has((c.title || '').trim()));
+  let findings = listCauses.length
+    ? `<div class="findings">${listCauses.map(c => `<div class="rc-item">${esc(c.title)}</div>`).join('')}</div>`
     : '';
-  // With no report-matched root cause, also surface the run's notes (report
-  // findings such as a throughput cutoff); drop the AWS note already shown above.
-  if (!rc.causes.length && r.notes) {
-    const extra = r.notes.replace(/^Low batch success.*?no logs to confirm the reason\.?\s*/i, '').trim();
-    if (extra) findings += `<div class="notes-cell">${esc(extra)}</div>`;
-  }
-  if (!findings) findings = '<span class="ok-flag">—</span>';
+  // The run's free-text notes are deliberately NOT rendered here. Every parameter
+  // now carries a curated byMetric cause, so the notes blob only restated what the
+  // panel already shows — and matching its '·'-joined fragments against cause
+  // titles broke as soon as those titles were rephrased. Notes remain in the data
+  // and stay searchable via searchable(); they are just no longer shown separately.
+  // The per-parameter status panel is always shown; root causes / notes follow
+  // it under a divider when there are any.
+  findings = statusPanel(r) + (findings ? `<div class="ps-sep"></div>${findings}` : '');
 
   const trCls = isBase ? 'baseline' : (r.anyReg ? 'regression' : '');
   return `<tr class="${trCls}">
@@ -1007,12 +1144,14 @@ function renderTable(){
 }
 
 // ─── Chart (from trend_chart) ──────────────────────────────────────────────────
+// regKey = the per-run regression flag that reddens THIS series' point, so a
+// throughput regression marks the throughput line rather than the batch line.
 const SERIES = [
-  { key:'batch',     label:'Batch success %',    color:'#1a7a3c', yAxis:'yPct'   },
-  { key:'failCount', label:'Conn failures',      color:'#c0392b', yAxis:'yCount' },
-  { key:'dlFail',    label:'Download failures',  color:'#e67e22', yAxis:'yCount' },
-  { key:'dlRate',    label:'Download success %', color:'#8e44ad', yAxis:'yPct'   },
-  { key:'bw',        label:'Peak throughput',    color:'#0097a7', yAxis:'yBw'    },
+  { key:'batch',     label:'Batch success %',    color:'#1a7a3c', yAxis:'yPct',   regKey:'passReg'     },
+  { key:'failCount', label:'Conn failures',      color:'#c0392b', yAxis:'yCount', regKey:'connFailReg' },
+  { key:'dlFail',    label:'Download failures',  color:'#e67e22', yAxis:'yCount', regKey:'dlFailReg'   },
+  { key:'dlRate',    label:'Download success %', color:'#8e44ad', yAxis:'yPct',   regKey:'dlRateReg'   },
+  { key:'bw',        label:'Peak throughput',    color:'#0097a7', yAxis:'yBw',    regKey:'bwReg'       },
 ];
 const visibility = { batch:true, failCount:true, dlFail:true, dlRate:true, bw:true };
 
@@ -1021,14 +1160,17 @@ const regressionPlugin = {
   afterDatasetsDraw(chart){
     const { ctx, scales } = chart;
     const data = chart._filteredRuns || [];
-    const xScale = scales.x, yScale = scales.yPct;
-    if (!yScale || !visibility.batch) return;
+    const xScale = scales.x;
     data.forEach((r, i) => {
-      if (!r.isReg) return;
-      const x = xScale.getPixelForTick(i), y = yScale.getPixelForValue(r.batch);
-      ctx.save(); ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2);
-      ctx.fillStyle = '#c0392b'; ctx.fill();
-      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+      SERIES.forEach(s => {
+        if (!visibility[s.key] || !r[s.regKey]) return;
+        const yScale = scales[s.yAxis];
+        if (!yScale) return;
+        const x = xScale.getPixelForTick(i), y = yScale.getPixelForValue(r[s.key]);
+        ctx.save(); ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2);
+        ctx.fillStyle = '#c0392b'; ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+      });
     });
   }
 };
@@ -1040,8 +1182,8 @@ function buildDatasets(data){
     data: data.map(r => r[s.key]),
     borderColor: s.color,
     backgroundColor: s.color + '22',
-    pointBackgroundColor: data.map(r => (s.key === 'batch' && r.isReg) ? '#c0392b' : s.color),
-    pointRadius: data.map(r => (s.key === 'batch' && r.isReg) ? 7 : 4),
+    pointBackgroundColor: data.map(r => r[s.regKey] ? '#c0392b' : s.color),
+    pointRadius: data.map(r => r[s.regKey] ? 7 : 4),
     pointHoverRadius: 7, borderWidth: 2, tension: 0.3,
     yAxisID: s.yAxis, hidden: !visibility[s.key], fill: false,
   }));
@@ -1074,7 +1216,8 @@ function initChart(){
                 `DL success:      ${r.dlRate.toFixed(1)}%`,
                 `Peak throughput: ${r.bw.toLocaleString()} Mb/s`,
               ];
-              if (r.isReg){ lines.push(''); lines.push(`⚠ Regression: batch success dropped ${Math.abs(r.regDelta)}% — from ${(r.batch - r.regDelta).toFixed(1)}% to ${r.batch.toFixed(1)}%`); }
+              const regs = regSummary(r);
+              if (regs.length){ lines.push(''); regs.forEach(m => lines.push(`⚠ ${m}`)); }
               return lines;
             },
             label: () => null,
@@ -1174,16 +1317,17 @@ function showTip(flag){
   rcTip.style.display = 'block';
   positionTip(flag);
 }
+// Any .has-tip element opts in — regression flags and status-panel rows alike.
 function maybeHideTip(to){
-  if (to && to.closest && to.closest('.reg-flag.has-tip')) return;  // still within a flag
+  if (to && to.closest && to.closest('.has-tip')) return;  // still within a trigger
   rcTip.style.display = 'none';
 }
 document.addEventListener('mouseover', e => {
-  const flag = e.target.closest && e.target.closest('.reg-flag.has-tip');
+  const flag = e.target.closest && e.target.closest('.has-tip');
   if (flag) showTip(flag);
 });
 document.addEventListener('mouseout', e => {
-  const flag = e.target.closest && e.target.closest('.reg-flag.has-tip');
+  const flag = e.target.closest && e.target.closest('.has-tip');
   if (flag) maybeHideTip(e.relatedTarget);
 });
 
