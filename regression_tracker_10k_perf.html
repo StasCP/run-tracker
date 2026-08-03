@@ -448,6 +448,10 @@ const RUN_ERRORS = {
       "throughput": {
         "title": "Steady ~600 Mb/s plateau, 750 Mb/s peak",
         "body": "About 600 Mb/s sustained across the 1.6-hour run window, peaking at 750 Mb/s. A wide, smooth plateau with no degradation or instability — the topology delivers consistent throughput with 10MB files."
+      },
+      "batch": {
+        "title": "Batch at 94.6% — not investigated",
+        "body": "540 of 10,000 batch jobs failed. This run's report focuses on the connection and download fixes; the batch result was not investigated."
       }
     },
     "all": [
@@ -822,6 +826,18 @@ const RUN_ERRORS = {
       "batch": {
         "title": "Batch dropped to 82.8% — suspected AWS issue",
         "body": "Suspected an AWS-side problem during the run, but no agent logs were available to confirm the cause."
+      },
+      "conn": {
+        "title": "Connection failures worse after the MQueue fix — 1,366",
+        "body": "Connection failures rose to 1,366, above the 1,231 of the pre-fix baseline run earlier the same day. No report was produced for this run, so the cause was not established."
+      },
+      "dl": {
+        "title": "13.6% of downloads failed — not investigated",
+        "body": "4,902 of 36,082 download attempts failed, up from 10.0% in the pre-fix baseline. No report was produced for this run."
+      },
+      "throughput": {
+        "title": "Peak throughput up ~50 Mb/s after the MQueue fix",
+        "body": "Peak reached 800 Mb/s with about 630 Mb/s sustained — roughly 50 Mb/s better than the pre-fix baseline."
       }
     },
     "all": [
@@ -830,6 +846,94 @@ const RUN_ERRORS = {
         "body": "Batch success dropped to 82.8%. Suspected AWS-side issue during the run; no agent logs were available to confirm the root cause."
       }
     ]
+  },
+  "2026-04-13|1": {
+    "report": "(manual)",
+    "byMetric": {
+      "batch": {
+        "title": "Batch clean at 99.6% — 45 failures",
+        "body": "45 of 10,000 batch jobs failed, attributed to AWS scheduling variance. The best batch result in the series."
+      },
+      "conn": {
+        "title": "362 connection failures — WireGuard IP pool undersized",
+        "body": "The WireGuard IP pool was undersized for 10,000 agents. This was the first baseline of the new 4-region, 64-gateway topology (Chicago, Miami, Frankfurt, LA)."
+      },
+      "dl": {
+        "title": "Downloads effectively perfect — 1 failure",
+        "body": "1 of 29,282 download attempts failed. No download problem in this run."
+      },
+      "throughput": {
+        "title": "383 Mb/s — the highest peak at the time",
+        "body": "383 Mb/s was the highest peak recorded when this baseline ran; later runs exceeded it. The control plane stayed resilient under live firewall, ZTA and scale-unit conditions across the 6.5-hour window."
+      }
+    },
+    "all": []
+  },
+  "2026-05-26|1": {
+    "report": "(manual)",
+    "byMetric": {
+      "batch": {
+        "title": "Batch at 92.0% — not investigated",
+        "body": "800 of 10,000 batch jobs failed. This run validated the MQueue fix; the batch result was not investigated."
+      },
+      "conn": {
+        "title": "Connection failures root-caused — WireGuard handshake timeout",
+        "body": "1,460 connections failed, identified as a WireGuard handshake timeout. The system was otherwise functional after the fix."
+      },
+      "dl": {
+        "title": "14.4% of downloads failed — not investigated",
+        "body": "4,065 of 28,178 download attempts failed. Not investigated in this run, and no report was produced."
+      },
+      "throughput": {
+        "title": "Throughput consistent at ~550 Mb/s sustained",
+        "body": "Sustained throughput held around 550 Mb/s with a 750 Mb/s peak — consistent behaviour after the MQueue fix."
+      }
+    },
+    "all": []
+  },
+  "2026-06-08|1": {
+    "report": "(manual)",
+    "byMetric": {
+      "batch": {
+        "title": "Batch clean at 99.4% — 60 failures",
+        "body": "60 of 10,000 batch jobs failed. Not investigated; this run focused on gateway capacity readings."
+      },
+      "conn": {
+        "title": "3,394 connection failures — under investigation",
+        "body": "Gateway capacity showed a soft ceiling around 253 users, with one gateway briefly reaching 415 before self-correcting. The connection failures were still under investigation when this run closed."
+      },
+      "dl": {
+        "title": "8.1% of downloads failed — under investigation",
+        "body": "2,087 of 25,712 download attempts failed. Still under investigation when this run closed; no report was produced."
+      },
+      "throughput": {
+        "title": "600 Mb/s peak — tunnel metrics unreliable",
+        "body": "Peak reached 600 Mb/s, but a tunnel-metrics inconsistency was under investigation in this run, so the per-tunnel figures behind that number were not considered reliable."
+      }
+    },
+    "all": []
+  },
+  "2026-06-25|1": {
+    "report": "(manual)",
+    "byMetric": {
+      "batch": {
+        "title": "Batch at 96.4% — not investigated",
+        "body": "360 of 10,000 batch jobs failed. Not investigated; this run focused on edge-infrastructure analysis."
+      },
+      "conn": {
+        "title": "514 connection failures — load still uneven at ~6:1",
+        "body": "Traffic distribution remained about 6:1 across tunnels with T103 dominant, so load was still not spread evenly across gateways."
+      },
+      "dl": {
+        "title": "Downloads reliable — 1.5% failed",
+        "body": "674 of 45,391 download attempts failed — a low failure rate for a run at this volume."
+      },
+      "throughput": {
+        "title": "1,150 Mb/s peak — among the highest in the series",
+        "body": "Peak reached 1,150 Mb/s. Edge infrastructure was confirmed via Datadog. Traffic spread across tunnels remained about 6:1."
+      }
+    },
+    "all": []
   }
 };
 // ─── end RUN_ERRORS ───
