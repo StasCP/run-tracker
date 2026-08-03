@@ -206,28 +206,36 @@
   .tip-hit .tip-title { color: #ff9b9b; }
   .tip-body { color: #b9b6ae; font-size: 12px; margin-top: 2px; }
 
-  /* Always-visible per-parameter status panel in the Status & Findings column. Three
-     columns: icon, parameter name, value. Colour comes from each parameter's
-     own threshold helper, so it matches that parameter's table badge. */
-  .param-status {
-    display: grid; grid-template-columns: 14px 1fr auto;
-    column-gap: 8px; row-gap: 3px; align-items: baseline;
-    font-size: 12px;
+  /* Per-parameter status panel in the Status & Findings column. Collapsed rows
+     show only icon + parameter name. Warning/failing parameters are <details>
+     elements that disclose the value and root cause on click; healthy ones are
+     static. Icon colour comes from each parameter's own threshold helper, so it
+     always matches that parameter's table badge. */
+  .param-status { font-size: 12px; }
+  .ps-item { padding: 1px 0; line-height: 1.55; }
+  /* Every row opens with a 12px slot — caret for expandable rows, blank for
+     static ones — so icons and names stay aligned down the column. */
+  .ps-head { cursor: pointer; list-style: none; }
+  .ps-head::-webkit-details-marker { display: none; }
+  .ps-head::before {
+    content: "▸"; display: inline-block; width: 12px;
+    color: var(--text-2); font-size: 11px; vertical-align: 0;
   }
-  .ps-icon { font-weight: 700; text-align: center; }
-  .ps-name { color: var(--text-2); white-space: nowrap; }
-  .ps-val  { font-family: var(--mono); font-size: 11px; font-weight: 600; text-align: right; white-space: nowrap; }
+  details[open] > .ps-head::before { content: "▾"; }
+  .ps-static::before { content: ""; display: inline-block; width: 12px; }
+  .ps-head:hover .ps-name { color: var(--text); }
+  .ps-head:hover::before { color: var(--text); }
+  .ps-icon { font-weight: 700; display: inline-block; width: 13px; text-align: center; }
+  .ps-name { color: var(--text-2); }
   .ps-ok   { color: var(--ok);   }
   .ps-warn { color: var(--warn); }
   .ps-err  { color: var(--err);  }
-  /* Root-cause caption under a failing parameter. Spans the full grid width and
-     is indented past the icon column. */
-  .ps-cause {
-    grid-column: 1 / -1; padding-left: 22px;
-    color: var(--text-3); font-size: 11px; line-height: 1.35;
-    margin: -1px 0 4px;
-  }
+  /* Disclosed detail: value line, then the root cause if one is recorded. */
+  .ps-detail { padding: 1px 0 5px 25px; }
+  .ps-val { font-family: var(--mono); font-size: 11px; font-weight: 600; }
+  .ps-cause { color: var(--text-3); font-size: 11px; line-height: 1.35; margin-top: 1px; }
   .ps-cause::before { content: "↳ "; }
+  .ps-nocause { color: var(--text-3); font-size: 11px; font-style: italic; margin-top: 1px; }
   .ps-sep  { height: 1px; background: var(--border); margin: 8px 0 6px; }
 
   .findings { font-size: 12px; color: var(--text-2); }
@@ -792,45 +800,47 @@ function paramStatuses(r){
 
 // Condensed root-cause caption for a failing parameter. Full text stays in the
 // root-cause list below the panel and in the hover tooltip.
-const PS_CAUSE_MAX = 90;
-function shorten(t){
-  return t.length > PS_CAUSE_MAX ? t.slice(0, PS_CAUSE_MAX - 1).trimEnd() + '…' : t;
-}
 function causeFor(r, metric){
   const c = r.errors && r.errors.byMetric && r.errors.byMetric[metric];
   return c && c.title ? c.title.trim() : '';
 }
 
-// Full titles of the causes captioned inside the panel. buildRow uses this to
-// drop them from the root-cause list below, so a cause is never printed twice
-// in the same cell. Keyed on the untruncated title, since captions are elided.
-function panelCauseTitles(r){
-  const seen = new Set();
-  paramStatuses(r).forEach(p => {
-    if (p.cls !== 'err') return;
-    const t = causeFor(r, p.metric);
-    if (t) seen.add(t);
+// Resolved panel rows: which parameters are expandable and which cause each one
+// discloses. Single source of truth for both the rendered panel and the
+// de-duplication against the root-cause list below, so the two cannot drift.
+// Downloads-failed and Download-success share the 'dl' bucket, so a cause is
+// attached once per panel — to the first non-healthy parameter that maps to it.
+function panelRows(r){
+  const claimed = new Set();
+  return paramStatuses(r).map(p => {
+    const expandable = p.cls === 'warn' || p.cls === 'err';
+    let cause = '';
+    if (expandable) {
+      const full = causeFor(r, p.metric);
+      if (full && !claimed.has(full)) { claimed.add(full); cause = full; }
+    }
+    return Object.assign({}, p, { expandable, cause });
   });
-  return seen;
+}
+
+function panelCauseTitles(r){
+  return new Set(panelRows(r).filter(x => x.cause).map(x => x.cause));
 }
 
 function statusPanel(r){
-  // Downloads-failed and Download-success share the 'dl' bucket, so a cause is
-  // captioned once per panel — on the first failing parameter that maps to it.
-  const shown = new Set();
-  const rows = paramStatuses(r).map(p => {
-    let row = `<span class="ps-icon ps-${p.cls}">${STATUS_ICON[p.cls]}</span>` +
-              `<span class="ps-name">${esc(p.name)}</span>` +
-              `<span class="ps-val ps-${p.cls}">${esc(p.val)}</span>`;
-    // Only failing parameters carry a cause caption, so the panel stays scannable.
-    if (p.cls === 'err') {
-      const full = causeFor(r, p.metric);
-      if (full && !shown.has(full)) {
-        shown.add(full);
-        row += `<span class="ps-cause">${esc(shorten(full))}</span>`;
-      }
+  const rows = panelRows(r).map(p => {
+    const head = `<span class="ps-icon ps-${p.cls}">${STATUS_ICON[p.cls]}</span>` +
+                 `<span class="ps-name">${esc(p.name)}</span>`;
+    if (!p.expandable) {
+      return `<div class="ps-item ps-static">${head}</div>`;
     }
-    return row;
+    const detail = `<div class="ps-val ps-${p.cls}">${esc(p.val)}</div>` +
+      (p.cause ? `<div class="ps-cause">${esc(p.cause)}</div>`
+               : `<div class="ps-nocause">no root cause recorded</div>`);
+    return `<details class="ps-item">` +
+             `<summary class="ps-head">${head}</summary>` +
+             `<div class="ps-detail">${detail}</div>` +
+           `</details>`;
   });
   return `<div class="param-status">${rows.join('')}</div>`;
 }
