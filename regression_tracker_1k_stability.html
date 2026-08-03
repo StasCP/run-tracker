@@ -206,6 +206,30 @@
   .tip-hit .tip-title { color: #ff9b9b; }
   .tip-body { color: #b9b6ae; font-size: 12px; margin-top: 2px; }
 
+  /* Always-visible per-parameter status panel in the FINDINGS column. Three
+     columns: icon, parameter name, value. Colour comes from each parameter's
+     own threshold helper, so it matches that parameter's table badge. */
+  .param-status {
+    display: grid; grid-template-columns: 14px 1fr auto;
+    column-gap: 8px; row-gap: 3px; align-items: baseline;
+    font-size: 12px;
+  }
+  .ps-icon { font-weight: 700; text-align: center; }
+  .ps-name { color: var(--text-2); white-space: nowrap; }
+  .ps-val  { font-family: var(--mono); font-size: 11px; font-weight: 600; text-align: right; white-space: nowrap; }
+  .ps-ok   { color: var(--ok);   }
+  .ps-warn { color: var(--warn); }
+  .ps-err  { color: var(--err);  }
+  /* Root-cause caption under a failing parameter. Spans the full grid width and
+     is indented past the icon column. */
+  .ps-cause {
+    grid-column: 1 / -1; padding-left: 22px;
+    color: var(--text-3); font-size: 11px; line-height: 1.35;
+    margin: -1px 0 4px;
+  }
+  .ps-cause::before { content: "↳ "; }
+  .ps-sep  { height: 1px; background: var(--border); margin: 8px 0 6px; }
+
   .findings { font-size: 12px; color: var(--text-2); }
   .rc-item { padding: 1px 0; line-height: 1.4; }
   .rc-item::before { content: "↳ "; color: var(--text-3); }
@@ -740,6 +764,76 @@ function dlCls(d){ return d >= 98 ? 'ok' : d >= 85 ? 'warn' : 'err'; }
 function bwCls(bw){ return bw >= BW_OK ? 'ok' : bw >= BW_WARN ? 'warn' : 'err'; }
 function connCls(r){ const p = r.connFail / AGENTS * 100; return p < 5 ? 'ok' : p < 20 ? 'warn' : 'err'; }
 function cellCls(bad){ return bad ? 'bad-cell' : ''; }
+
+// Downloads-failed status. Unlike the other parameters this has no absolute
+// "good" level, so a red state is driven by the regression flag (failure rate
+// rose more than REG_TH.dlfail pts vs the previous run); above 15% is amber.
+function dlFailCls(r){
+  if (r.dlFailReg) return 'err';
+  return r.dlFailRate > 15 ? 'warn' : 'ok';
+}
+
+const STATUS_ICON = { ok: '✓', warn: '⚠', err: '✗' };
+
+// Per-parameter status rows for the FINDINGS column, in table-column order.
+// Duration and Downloads-succeeded are intentionally excluded: neither has a
+// pass/fail threshold, so an icon would assert a verdict we can't support.
+// `metric` is the RUN_ERRORS.byMetric bucket whose root cause explains this
+// parameter — used to caption a failing (red) row.
+function paramStatuses(r){
+  return [
+    { name: 'Batch success',       metric: 'batch',      cls: batchCls(r.batch), val: r.batch.toFixed(1) + '%' },
+    { name: 'Connection failures', metric: 'conn',       cls: connCls(r),        val: fmt(r.connFail) },
+    { name: 'Downloads failed',    metric: 'dl',         cls: dlFailCls(r),      val: `${fmt(r.dlFail)} (${r.dlFailRate.toFixed(1)}%)` },
+    { name: 'Download success',    metric: 'dl',         cls: dlCls(r.dlRate),   val: r.dlRate.toFixed(1) + '%' },
+    { name: 'Peak throughput',     metric: 'throughput', cls: bwCls(r.bw),       val: fmt(r.bw) + ' Mb/s' },
+  ];
+}
+
+// Condensed root-cause caption for a failing parameter. Full text stays in the
+// root-cause list below the panel and in the hover tooltip.
+const PS_CAUSE_MAX = 90;
+function shorten(t){
+  return t.length > PS_CAUSE_MAX ? t.slice(0, PS_CAUSE_MAX - 1).trimEnd() + '…' : t;
+}
+function causeFor(r, metric){
+  const c = r.errors && r.errors.byMetric && r.errors.byMetric[metric];
+  return c && c.title ? c.title.trim() : '';
+}
+
+// Full titles of the causes captioned inside the panel. buildRow uses this to
+// drop them from the root-cause list below, so a cause is never printed twice
+// in the same cell. Keyed on the untruncated title, since captions are elided.
+function panelCauseTitles(r){
+  const seen = new Set();
+  paramStatuses(r).forEach(p => {
+    if (p.cls !== 'err') return;
+    const t = causeFor(r, p.metric);
+    if (t) seen.add(t);
+  });
+  return seen;
+}
+
+function statusPanel(r){
+  // Downloads-failed and Download-success share the 'dl' bucket, so a cause is
+  // captioned once per panel — on the first failing parameter that maps to it.
+  const shown = new Set();
+  const rows = paramStatuses(r).map(p => {
+    let row = `<span class="ps-icon ps-${p.cls}">${STATUS_ICON[p.cls]}</span>` +
+              `<span class="ps-name">${esc(p.name)}</span>` +
+              `<span class="ps-val ps-${p.cls}">${esc(p.val)}</span>`;
+    // Only failing parameters carry a cause caption, so the panel stays scannable.
+    if (p.cls === 'err') {
+      const full = causeFor(r, p.metric);
+      if (full && !shown.has(full)) {
+        shown.add(full);
+        row += `<span class="ps-cause">${esc(shorten(full))}</span>`;
+      }
+    }
+    return row;
+  });
+  return `<div class="param-status">${rows.join('')}</div>`;
+}
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ─── Root causes / regression summary (from trend_chart) ───────────────────────
@@ -819,8 +913,12 @@ function rowHtml(r, isBase){
 
   const dateLabel = r.date.slice(5,10) + (r.ord > 1 ? `<span class="ord">run ${r.ord}</span>` : '');
   const baseTag = isBase ? '<span class="bl-pill">baseline</span>' : '';
-  let findings = causes.length
-    ? `<div class="findings">${causes.map(c => `<div class="rc-item">${esc(c.title)}</div>`).join('')}</div>`
+  // Causes already captioned against a failing parameter in the status panel are
+  // dropped here, so the same title never appears twice in one cell.
+  const captioned = panelCauseTitles(r);
+  const listCauses = causes.filter(c => !captioned.has((c.title || '').trim()));
+  let findings = listCauses.length
+    ? `<div class="findings">${listCauses.map(c => `<div class="rc-item">${esc(c.title)}</div>`).join('')}</div>`
     : '';
   // With no report-matched root cause, also surface the run's notes (report
   // findings such as a throughput cutoff); drop the AWS note already shown above.
@@ -828,7 +926,9 @@ function rowHtml(r, isBase){
     const extra = r.notes.replace(/^Low batch success.*?no logs to confirm the reason\.?\s*/i, '').trim();
     if (extra) findings += `<div class="notes-cell">${esc(extra)}</div>`;
   }
-  if (!findings) findings = '<span class="ok-flag">—</span>';
+  // The per-parameter status panel is always shown; root causes / notes follow
+  // it under a divider when there are any.
+  findings = statusPanel(r) + (findings ? `<div class="ps-sep"></div>${findings}` : '');
 
   const trCls = isBase ? 'baseline' : (r.anyReg ? 'regression' : '');
   return `<tr class="${trCls}">
