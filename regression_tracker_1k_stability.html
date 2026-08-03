@@ -409,20 +409,20 @@ const RUN_ERRORS = {
     "report": "stability_report_1k_run3_u6on3HPusz_8.html",
     "byMetric": {
       "conn": {
-        "title": "Connection Plane — Perfect 100% for First Time",
-        "body": "15,914 / 15,914 connections succeeded across all ~16 loops — zero failures. This is the first time connection success has reached 100% in the series. Run 1 had 36.5% failures (WireGuard pool exhaustion); Run 2 had 1 failure (99.99%). At 1K scale, the WireGuard connection infrastructure is fully proven stable over extended multi-hour runs."
+        "title": "Connections perfect — 100% for the first time",
+        "body": "All 15,914 connections succeeded across 16 loops — the first flawless connection result in the series. The connection layer is proven stable at 1K over long runs."
       },
       "dl": {
-        "title": "5MB File Size Reduces Server Pressure — +18.5pp Downloads",
-        "body": "Switching from 10MB (Runs 1–2) to 5MB files in Run 3 cut per-transfer data volume in half. With the same 60-second timeout, a 5MB transfer at only 1.5 Mb/s completes successfully — vs a 10MB transfer requiring 2.8 Mb/s. This reduced the download failure rate from 27.2% to 8.7%, the largest single-run improvement in the series. The file server is still the bottleneck, but smaller files expose it less."
+        "title": "Smaller test files cut download failures by 18.5pp",
+        "body": "Halving the test file from 10 MB to 5 MB dropped the download failure rate from 27.2% to 8.7% — the largest single-run gain in the series. The file server is still the bottleneck; smaller files simply strain it less."
       },
       "throughput": {
-        "title": "Progressive Throughput Degradation After ~18:00",
-        "body": "Throughput dropped from a stable 55–65 Mb/s band (10:00–17:00) to ~25 Mb/s sustained from 19:00 onward. This pattern did not appear in Run 2's 10-hour window, but emerged in Run 3's 12.5-hour run. The single Windows file server at 10.0.0.202 appears to degrade over sustained load — likely connection table exhaustion, memory pressure, or OS-level resource limits. Average download time rose correspondingly from ~7–10s (mid-run) to ~12–15s (after 18:00)."
+        "title": "Throughput degrades after ~18:00",
+        "body": "Fell from a steady 55–65 Mb/s to around 25 Mb/s from 19:00 onward. This only appears on runs longer than 10 hours, and points to the single file server degrading under sustained load."
       },
       "batch": {
-        "title": "Series Trajectory — Clear Improvement Run-over-Run",
-        "body": "Connections: 63.5% → 99.99% → 100%. Downloads: 68.3% → 72.8% → 91.3%. Batch: 85.7% → 77.2% → 89.1%. The connection plane is production-ready at 1K scale. The file server bottleneck is confirmed as the sole remaining obstacle. Adding a second server is expected to push all metrics above 95% and validate the infrastructure for the 2K scale-up run."
+        "title": "Improving every run",
+        "body": "Connections 63.5% → 99.99% → 100%. Downloads 68.3% → 72.8% → 91.3%. Batch 85.7% → 77.2% → 89.1%. The connection layer is production-ready; the file server is the only remaining blocker."
       }
     },
     "all": [
@@ -448,16 +448,16 @@ const RUN_ERRORS = {
     "report": "stability_report_1k_run2_u6on3HPusz_6.html",
     "byMetric": {
       "conn": {
-        "title": "WireGuard Connection Plane Clean at 1K",
-        "body": "10,329 / 10,330 connections succeeded — 99.99% success rate across 10 loops. The IP pool exhaustion seen in Run 1 does not trigger at 1K concurrency. Agent logs confirm 19 planned graceful disconnects (stateReasonCode: 7), normal reconnect cycling across 5 gateways (Miami + Frankfurt 1), and average tunnel session duration of ~51.7 min."
+        "title": "Connections clean — 99.99%",
+        "body": "10,329 of 10,330 connections succeeded across 10 loops. The IP pool exhaustion seen in the previous run does not occur at 1K scale. No action needed."
       },
       "dl": {
-        "title": "Root Cause: File Server Saturation — curl Timeout code=124",
-        "body": "CloudWatch logs confirm all 9,385 download failures share a single cause: curl exit code 124 — the 60-second download timeout was reached. This is fundamentally different from Run 1's HTTP 500 / WireGuard pool errors. The file server at 10.0.0.202 accepts the TCP connection and begins the transfer, but stalls under concurrent load — delivering only ~843 KB of 10 MB before timing out. Successful downloads complete in 2.6–4.2s when the server isn't congested. The single Windows file server cannot sustain 1K+ concurrent 10MB transfers."
+        "title": "File server saturated — cause of all 9,385 download failures",
+        "body": "Every download failure hit the 60-second timeout. The single Windows file server accepts the transfer then stalls under load, delivering under 1 MB of the 10 MB file. It cannot sustain 1K concurrent transfers. Fix: add a second file server."
       },
       "throughput": {
-        "title": "Throughput Stable — No Collapse, But Insufficient",
-        "body": "Throughput held at 45–65 Mb/s across the full 10-hour window — a marked improvement over Run 1's collapse from 102 Mb/s to 20 Mb/s. Average download time was flat at ~15s with no progressive degradation. At 2K scale with doubled concurrent load the file server will saturate further. A second Windows file server must be added before Run 3."
+        "title": "Throughput steady, but too low",
+        "body": "Held at 45–65 Mb/s for the full 10 hours with no collapse — better than the previous run. Still short of what is needed: at 2K scale the file server will saturate further. Fix: add a second file server."
       }
     },
     "all": [
@@ -483,20 +483,20 @@ const RUN_ERRORS = {
     "report": "stability_report_1k_run4_u6on3HPusz_5.html",
     "byMetric": {
       "conn": {
-        "title": "Connection Plane — Perfect 100% Two Runs Running",
-        "body": "24,974 / 24,974 connections succeeded across ~25 loops — zero failures. This is the second consecutive 100% connection result, following Run 3. At 1K scale, the WireGuard connection infrastructure is now proven stable over two independent extended multi-hour runs, including this run's ~16.6-hour overnight window."
+        "title": "Connections perfect — 100%",
+        "body": "All 24,974 connections succeeded across 25 loops, including a 16.6-hour overnight window."
       },
       "dl": {
-        "title": "Download success 70.2% (series worst) — routing failures + file-server saturation",
-        "body": "Download success fell to 70.2%, breaking a three-run improvement streak (91.3% → 70.2%). CloudWatch, scoped to this run's batch ID (50446636), confirmed routing failures on 191 agents (19.1%) as a partial cause. The remaining download failures are file-partial (incomplete transfers). The single Windows file server remains the download bottleneck under the ~25-loop, ~16.6h overnight load."
+        "title": "Downloads worst in the series — 70.2%",
+        "body": "Broke a three-run improvement streak (91.3% → 70.2%). Logs confirmed routing failures on 191 agents (19.1%) as a partial cause; the remainder were incomplete transfers from the single file server."
       },
       "batch": {
-        "title": "Batch success 100% — series best",
-        "body": "Batch success reached 100% (1,000 / 1,000) — the best batch result in the series."
+        "title": "Batch perfect — 100%",
+        "body": "All 1,000 batch jobs succeeded — the best batch result in the series."
       },
       "throughput": {
-        "title": "Peak throughput 68 Mb/s, collapsing to <20 Mb/s under sustained load",
-        "body": "Peak throughput reached ~68 Mb/s but collapsed to <20 Mb/s once the single file server saturated — the same server-side bottleneck seen since Run 1. The ~16.6h overnight window held the saturated state, dragging throughput ~32% below Run 3's ~100 Mb/s peak."
+        "title": "Throughput collapsed below 20 Mb/s",
+        "body": "Peaked at ~68 Mb/s then fell under 20 Mb/s once the single file server saturated — roughly 32% below the previous run's peak. The same server bottleneck seen since Run 1."
       }
     },
     "all": [
@@ -522,20 +522,20 @@ const RUN_ERRORS = {
     "report": "stability_report_1k_run3_u6on3HPusz_14.html",
     "byMetric": {
       "conn": {
-        "title": "Connection Plane — Perfect 100% Two Runs Running",
-        "body": "18,122 / 18,122 connections succeeded across ~18 loops — zero failures. This is the second consecutive 100% connection result, following Run 2. At 1K scale, the WireGuard connection infrastructure is now proven stable over two independent extended multi-hour runs, including this run's ~22-hour overnight window."
+        "title": "Connections perfect — 100% for a second run",
+        "body": "All 18,122 connections succeeded across 18 loops, including a 22-hour overnight window. Two independent long runs now confirm the connection layer is stable at 1K."
       },
       "dl": {
-        "title": "Batch Success Collapse — Down 25.8pp from Run 2",
-        "body": "Batch success fell from 77.2% (Run 2) to 51.4% (Run 3) — the sharpest single-run batch regression in the series apart from Run 1's pool exhaustion. Since download success (97.5%) stayed high, batch is the metric that actually captures the severity of this run's file-server issue."
+        "title": "Batch fell 25.8pp to 51.4%",
+        "body": "The sharpest batch drop in the series so far. Download success stayed high at 97.5%, so batch is the metric that reflects the real severity of this run's file-server problem."
       },
       "throughput": {
-        "title": "Sharp Late-Run Decline, Not a Dip",
-        "body": "Throughput declines sharply through the reviewed window, trending toward full unresponsiveness by the ~10.5-hour mark. Run 2's degraded state was still a stable 45–65 Mb/s band; Run 3 shows the file server heading toward complete unresponsiveness rather than merely struggling under load. Quantified: the ~300 Mb/s peak decayed to ~90–100 Mb/s by hour 10, then collapsed toward full unresponsiveness (60s timeouts) by the ~10.5h mark."
+        "title": "Throughput collapsed late in the run",
+        "body": "The ~300 Mb/s peak decayed to ~90–100 Mb/s by hour 10, then collapsed toward full unresponsiveness (60-second timeouts) by hour 10.5. Worse than the previous run, where throughput stayed low but stable."
       },
       "batch": {
-        "title": "Batch Success Collapse — Down 25.8pp from Run 2",
-        "body": "Batch success fell from 77.2% (Run 2) to 51.4% (Run 3) — the sharpest single-run batch regression in the series apart from Run 1's pool exhaustion. Since download success (97.5%) stayed high, batch is the metric that actually captures the severity of this run's file-server issue."
+        "title": "Batch fell 25.8pp to 51.4%",
+        "body": "The sharpest batch drop in the series so far. Download success stayed high at 97.5%, so batch is the metric that reflects the real severity of this run's file-server problem."
       }
     },
     "all": [
@@ -561,8 +561,8 @@ const RUN_ERRORS = {
     "report": "stability_report_1k_run5_u6on3HPusz_1.html",
     "byMetric": {
       "batch": {
-        "title": "Batch collapse — EC2 Spot capacity reclamation",
-        "body": "673 of 1,000 batch jobs failed (32.7% success), 100% attributable to EC2 Spot capacity reclamation across 9 termination clusters in the 11:51–15:19 UTC window; the largest single burst (336 terminations, 14:14:11–15:19 UTC) accounts for ~half on its own. Confirmed from host-termination logs (spot-no-capacity) — an infrastructure capacity issue in the Spot pool, not an application or file-server defect.",
+        "title": "Batch collapsed — AWS reclaimed Spot capacity",
+        "body": "673 of 1,000 batch jobs failed (32.7% success), all caused by AWS reclaiming EC2 Spot capacity across 9 waves between 11:51 and 15:19 UTC. A single burst of 336 accounts for about half. Confirmed from logs — an AWS capacity issue, not a fault in our application or file server.",
         "investigated": true
       }
     },
@@ -577,20 +577,20 @@ const RUN_ERRORS = {
     "report": "stability_report_1k_run6_u6on3HPusz-automated_4.html",
     "byMetric": {
       "conn": {
-        "title": "Connection Failures — Three Tight Clusters, Not Random Noise",
-        "body": "All 62 vpn-status is-disconnect events confirmed via CloudWatch, falling into three sharp bursts: 43 events in 104s at 12:23:02–12:24:46 UTC, 8 in 70s at 14:38:33–14:39:43 UTC, and 11 in 103s at 18:52:34–18:54:17 UTC. Each agent disconnects exactly once — no repeat offenders — and none overlap with the 38 Spot-terminated batch agents, ruling out a shared cause with the batch failures. The embedded message clock again ran a fixed +3h ahead of @timestamp, same offset Run 4 found. Correlation against server-side latency spikes attempted for the 12:23 cluster; result was inconclusive within this run's log data (see CloudWatch Log Analysis)."
+        "title": "62 disconnects in three short bursts",
+        "body": "All 62 disconnects fell into three bursts — 43 within two minutes at 12:23 UTC, then 8 and 11 later in the run. Each agent dropped only once, and none overlap the batch failures, so the two problems are unrelated. Cause still unknown."
       },
       "dl": {
-        "title": "Late-Run Download Outage — ~19:15 UTC to Run End",
-        "body": "Raw log sampling at 19:00, 19:15, and 21:30 UTC confirms a hard cutover: successful downloads present at 19:00, then absent in every sample from 19:15 through the end of the run (~2h45m). The outage period is uniformly no-partial-file (zero-byte failures) pinned at measured_time=48.01 — a different timeout ceiling than the 60.01 seen earlier in the run. Broad, non-repeating agent spread each time points to a file-server-side failure rather than a client-side one. Not visible on the throughput or avg-download-time charts, likely because those metrics reflect all wire traffic and successful-download averages respectively, neither of which isolates a zero-success window the way a raw failure count does."
+        "title": "Downloads stopped entirely for the final ~2h45m",
+        "body": "Downloads were working at 19:00 UTC and then failed continuously from 19:15 to the end of the run. Every failure returned zero bytes, and the wide spread of affected agents points to the file server rather than the clients. The throughput chart does not reveal this outage."
       },
       "throughput": {
-        "title": "Late-Run Download Outage — ~19:15 UTC to Run End",
-        "body": "Raw log sampling at 19:00, 19:15, and 21:30 UTC confirms a hard cutover: successful downloads present at 19:00, then absent in every sample from 19:15 through the end of the run (~2h45m). The outage period is uniformly no-partial-file (zero-byte failures) pinned at measured_time=48.01 — a different timeout ceiling than the 60.01 seen earlier in the run. Broad, non-repeating agent spread each time points to a file-server-side failure rather than a client-side one. Not visible on the throughput or avg-download-time charts, likely because those metrics reflect all wire traffic and successful-download averages respectively, neither of which isolates a zero-success window the way a raw failure count does."
+        "title": "Downloads stopped entirely for the final ~2h45m",
+        "body": "Downloads were working at 19:00 UTC and then failed continuously from 19:15 to the end of the run. Every failure returned zero bytes, and the wide spread of affected agents points to the file server rather than the clients. The throughput chart does not reveal this outage."
       },
       "batch": {
-        "title": "Batch Reconciliation — Run 4's Open Question Finally Closed",
-        "body": "The AWS Batch console's Succeeded/Failed table (962 / 38) and the array-job status log (38 confirmed host-terminated events, array indices up to 999) agree exactly, confirming the array size at 1,000. This is a clean 1:1 reconciliation — the first in the series where batch dashboard and log-derived counts have matched without discrepancy."
+        "title": "Batch numbers reconcile exactly",
+        "body": "The AWS console (962 succeeded / 38 failed) and the job logs agree exactly on 1,000 jobs — the first clean match in the series, closing a question open since Run 4."
       }
     },
     "all": [
@@ -624,16 +624,16 @@ const RUN_ERRORS = {
     "report": "stability_report_1k_run7_u6on3HPusz-automated_1.html",
     "byMetric": {
       "conn": {
-        "title": "Routing/Connection Layer Ruled Out for the Download Dip",
-        "body": "Per-minute counts of routing/tunnel-management log lines (route-table adds, \"added successfully\" events) across 10:00–11:15 UTC show a smooth, gentle hump (~2,300 → ~2,675 → ~2,300/min) with no cliff, spike, or dead zone anywhere in the range — and no distinguishing feature at the 10:15–11:00 dip window specifically. This rules out a tunnel-level disruption as the download dip's cause."
+        "title": "Network ruled out as the cause of the download dip",
+        "body": "Routing activity was smooth across the dip window with no spike or gap, so the tunnel layer did not cause the download dip."
       },
       "dl": {
-        "title": "Retry-Counting Methodology Trap — Caught Before It Reached the Report",
-        "body": "An initial raw per-minute count of Verified size log lines suggested a ~88–94% failure rate sustained across 10:00–11:14 UTC — which would have implied a much larger, longer outage than the dashboard's whole-run 18.74% failure rate could explain. Raw-line inspection showed each download logs one Verified size line per retry attempt (up to 8 per download), so attempt-level counts vastly overstate true failure. Re-computed on a per-download (successes vs. total attempts) basis, the real signal is a baseline ~10–12% → trough ~5–6% dip, not a 90% collapse. Same lesson as Run 4 and Run 6: surprising raw numbers need a mechanism check before they go in a report."
+        "title": "Download dip far smaller than first thought",
+        "body": "An early reading suggested a ~90% failure rate, but it was counting retries rather than downloads. Corrected, the real picture is a dip from ~10–12% to ~5–6% failures — not an outage. Caught before it reached the report."
       },
       "batch": {
-        "title": "Batch Failures Structured Around Dense Host Packing — New This Run",
-        "body": "Of 373 failed array indices, 336 (90.1%) come from just 7 hosts, each losing exactly 48 co-located agents in a sub-10-second burst (spot interruptions across 13:19–16:59 UTC). The remaining 37 failures are isolated single-agent losses across 37 distinct hosts. A single Spot interruption now carries a 48-agent blast radius — worth reviewing instance-packing density against acceptable risk before Run 8.",
+        "title": "Batch failures came from 7 overloaded hosts",
+        "body": "336 of 373 failures (90%) came from just 7 hosts, each losing exactly 48 agents at once when AWS reclaimed Spot capacity. A single interruption now removes 48 agents. Fix: review how densely agents are packed onto each host.",
         "investigated": true
       }
     },
@@ -668,22 +668,22 @@ const RUN_ERRORS = {
     "report": "stability_report_1k_run8_u6on3HPusz-automated_1.html",
     "byMetric": {
       "conn": {
-        "title": "Connection Clustering Confirmed — Corrects an Earlier \"No Clustering\" Read",
-        "body": "A raw-log follow-up (job_id-filtered vpn-status is-disconnect query) found 53 disconnects in 4 discrete bursts, not the scattered single failure this report initially assumed based on a mislabeled comparison. The largest burst (34 events, 15:14:52–15:16:55) alone accounts for 64% of all failures. Structurally similar to Run 6's three-cluster pattern; still not root-caused.",
+        "title": "53 disconnects in four short bursts",
+        "body": "A log review found the disconnects were clustered into four bursts rather than scattered, the largest (34 events) accounting for 64% of them. This corrects an earlier reading. Cause still unknown.",
         "investigated": true
       },
       "dl": {
-        "title": "Download Failure Reason Confirmed via Logs — 60.01s Timeout",
-        "body": "Dashboard figures (21,217 ok / 5,408 failed, 79.69%) are used for volume and success rate. Log analysis was used only to establish the failure reason: every failure line carries measured_time=60.01, splitting into 87.5% zero-byte (no-partial-file) and 12.5% partial-transfer (file-partial) failures. A real, consistent mechanism — though the 60.01s ceiling differs from Run 6's 48.01s, worth asking whether that changed intentionally."
+        "title": "Downloads timed out at 60 seconds",
+        "body": "Every download failure hit a fixed 60-second timeout: 87.5% returned nothing at all, 12.5% transferred part of the file. A consistent mechanism, though the previous run's limit was 48 seconds — worth confirming that change was intentional."
       },
       "batch": {
-        "title": "Batch Failure Structure Changes Shape Again — Two 96-Agent Bursts, Not Seven 48-Agent Bursts",
-        "body": "Run 7's 373 failures were dominated by seven 48-agent dense-packing bursts across 7 distinct hosts. Run 8's 192 in-window failures come from exactly two hosts, each losing 96 agents. Same general risk (large simultaneous single-host losses from co-located agent packing), different specific shape run to run — worth investigating whether the underlying instance-packing configuration is stable or drifting.",
+        "title": "Batch failures came from 2 overloaded hosts",
+        "body": "All 192 in-window failures came from just two hosts, each losing 96 agents at once. Last run it was seven hosts losing 48 each — the same risk in a different shape each time. Fix: check whether host packing configuration is drifting.",
         "investigated": true
       },
       "throughput": {
-        "title": "Lower Peak, But the Cleanest Throughput Profile in the Series",
-        "body": "A steady ~35–60 Mb/s band across the full 9.6h window with no cliff, dip, or outage — the cleanest throughput chart in the series so far. The drop versus Run 7's 88 Mb/s peak is a lower ceiling, not degradation under sustained load: unlike Runs 1–4 there is no late-run collapse. The single Windows file server remains the throughput bottleneck; adding a second server is still outstanding across every run in the series.",
+        "title": "Lower peak, but the steadiest run yet",
+        "body": "A steady 35–60 Mb/s for the full 9.6 hours with no dip or outage — the cleanest profile in the series. The drop from last run's 88 Mb/s peak is a lower ceiling, not degradation under load. The single file server remains the bottleneck.",
         "investigated": true
       }
     },
@@ -803,8 +803,11 @@ function paramStatuses(r){
 function batchPlaceholder(r){
   const investigated = !!(r.errors && r.errors.byMetric && r.errors.byMetric.batch
                           && r.errors.byMetric.batch.investigated);
-  if (batchCls(r.batch) !== 'err' || investigated) return '';
-  return `Low batch success ${r.batch.toFixed(1)}% — AWS issue, no logs to confirm the reason`;
+  if (batchCls(r.batch) !== 'err' || investigated) return null;
+  return {
+    title: `Batch low at ${r.batch.toFixed(1)}% — cause never confirmed`,
+    body: 'Most likely an AWS capacity issue, but no logs were captured for this run, so the cause was never confirmed.'
+  };
 }
 
 function causeFor(r, metric){
@@ -825,10 +828,7 @@ function panelRows(r){
   return paramStatuses(r).map(p => {
     const causes = [];
     add(causes, causeFor(r, p.metric));
-    if (p.metric === 'batch') {
-      const ph = batchPlaceholder(r);
-      if (ph) add(causes, { title: ph, body: '' });
-    }
+    if (p.metric === 'batch') add(causes, batchPlaceholder(r));
     // Every parameter carries a tooltip — it always has a value worth showing, and
     // any recorded finding sits inside its own parameter rather than a separate list.
     return Object.assign({}, p, { causes });
@@ -944,18 +944,11 @@ function rowHtml(r, isBase){
   let findings = listCauses.length
     ? `<div class="findings">${listCauses.map(c => `<div class="rc-item">${esc(c.title)}</div>`).join('')}</div>`
     : '';
-  // With no report-matched root cause, also surface the run's notes. Notes are a
-  // '·'-joined blob of report findings, so it is split and any fragment the panel
-  // already discloses is dropped — nothing appears both inside and outside a
-  // parameter. The leading AWS sentence goes too; it now lives under Batch success.
-  if (!rc.causes.length && r.notes) {
-    const frags = r.notes
-      .replace(/^Low batch success.*?no logs to confirm the reason\.?\s*/i, '')
-      .split('·')
-      .map(s => s.trim())
-      .filter(s => s && ![...captioned].some(c => c === s || (s.length >= 20 && c.indexOf(s) !== -1)));
-    if (frags.length) findings += `<div class="notes-cell">${esc(frags.join(' · '))}</div>`;
-  }
+  // The run's free-text notes are deliberately NOT rendered here. Every parameter
+  // now carries a curated byMetric cause, so the notes blob only restated what the
+  // panel already shows — and matching its '·'-joined fragments against cause
+  // titles broke as soon as those titles were rephrased. Notes remain in the data
+  // and stay searchable via searchable(); they are just no longer shown separately.
   // The per-parameter status panel is always shown; root causes / notes follow
   // it under a divider when there are any.
   findings = statusPanel(r) + (findings ? `<div class="ps-sep"></div>${findings}` : '');
