@@ -829,11 +829,9 @@ function panelRows(r){
       const ph = batchPlaceholder(r);
       if (ph) add(causes, { title: ph, body: '' });
     }
-    // Warning/failing parameters always carry a tooltip, since their value matters.
-    // Healthy ones only when a finding is recorded against them — that way every
-    // recorded finding sits inside its own parameter instead of in a separate list.
-    const hasTip = p.cls !== 'ok' || causes.length > 0;
-    return Object.assign({}, p, { hasTip, causes });
+    // Every parameter carries a tooltip — it always has a value worth showing, and
+    // any recorded finding sits inside its own parameter rather than a separate list.
+    return Object.assign({}, p, { causes });
   });
 }
 
@@ -847,13 +845,13 @@ function statusPanel(r){
   const rows = panelRows(r).map(p => {
     const head = `<span class="ps-icon ps-${p.cls}">${STATUS_ICON[p.cls]}</span>` +
                  `<span class="ps-name">${esc(p.name)}</span>`;
-    if (!p.hasTip) return `<div class="ps-item">${head}</div>`;
     // Tooltip body reuses the .tip-* classes, which are styled for #rc-tip's dark
     // panel. Bodies are included here — they were not shown by the old drop-down.
+    const empty = p.cls === 'ok' ? 'No findings recorded.' : 'No root cause recorded.';
     const items = p.causes.length
       ? p.causes.map(c => `<div class="tip-item"><div class="tip-title">${esc(c.title)}</div>` +
           (c.body ? `<div class="tip-body">${esc(c.body)}</div>` : '') + `</div>`).join('')
-      : `<div class="tip-item"><div class="tip-body">No root cause recorded.</div></div>`;
+      : `<div class="tip-item"><div class="tip-body">${empty}</div></div>`;
     const tip = `<span class="tip-data" hidden>` +
                   `<div class="tip-head tip-${p.cls}">${esc(p.name)} — ${esc(p.val)}</div>${items}` +
                 `</span>`;
