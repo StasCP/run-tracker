@@ -438,22 +438,26 @@ const RUN_ERRORS = {
     "report": "stability_report_throughput_test3_QaWL9HOEOx.html",
     "byMetric": {
       "conn": {
-        "title": "Connection failures — the main open issue",
-        "body": "189 connections failed (2.0%), most likely WireGuard IP pool pressure. The 1,000-second connection duration keeps lease requests manageable; raising it toward 3,600 seconds should remove the rest."
+        "title": "12.3% of connections failed — WireGuard IP pool exhausted",
+        "body": "1,231 connection attempts failed because the WireGuard IP pool was exhausted. The pool must be expanded to cover the peak concurrent 10,000-agent load — the report's primary action item before the next run."
       },
       "dl": {
         "title": "Download failures improved to 10.0%",
-        "body": "4,250 of the 10MB downloads failed. The 60-second HTTPS timeout is too tight for 10MB files at this concurrency. Fix: raise it to 120 seconds."
+        "body": "4,250 of 42,425 download attempts failed. The 60-second HTTPS timeout is too tight for 10MB files at ~600 Mb/s concurrency. Fix: raise it to 120 seconds."
       },
       "throughput": {
-        "title": "Steady ~650 Mb/s plateau",
-        "body": "About 600 Mb/s sustained across the 1.5-hour run window, with a wide smooth plateau and no degradation or instability. The topology delivers consistent throughput with 10MB files."
+        "title": "Steady ~600 Mb/s plateau, 750 Mb/s peak",
+        "body": "About 600 Mb/s sustained across the 1.6-hour run window, peaking at 750 Mb/s. A wide, smooth plateau with no degradation or instability — the topology delivers consistent throughput with 10MB files."
       }
     },
     "all": [
       {
-        "title": "Connection Failures — Primary Open Issue",
-        "body": "189 failed connections (2.0%) — WireGuard IP pool pressure is the likely cause. Connection duration of 1,000s keeps lease request frequency manageable. Further increase toward 3,600s should eliminate remaining failures."
+        "title": "1,231 Connection Failures — Fix Required",
+        "body": "WireGuard IP pool exhaustion causing 12.3% connection failure rate. IP pool must be expanded to cover peak concurrent 10,000-agent load. This is the primary action item before the next run."
+      },
+      {
+        "title": "10.0% Download Failure Rate — Improved",
+        "body": "4,250 of 42,425 download attempts failed (10.0%). The 60s HTTPS timeout is too tight for 10MB files at ~600 Mb/s concurrency. Increasing to 120s is the recommended next step."
       },
       {
         "title": "~650 Mb/s Sustained Plateau — Smooth Profile",
@@ -462,14 +466,6 @@ const RUN_ERRORS = {
       {
         "title": "Most Even Tunnel Distribution — Frankfurt 4 Dominant",
         "body": "All 8 tunnels carrying load simultaneously with a wide stacked hump across the full plateau. LA (T301) dominant at ~~14.4 Mb/s peak — all 4 regions contributing."
-      },
-      {
-        "title": "1,231 Connection Failures — Fix Required",
-        "body": "WireGuard IP pool exhaustion causing 12.3% connection failure rate. IP pool must be expanded to cover peak concurrent 10,000-agent load. This is the primary action item before the next run."
-      },
-      {
-        "title": "10.0% Download Failure Rate — Improved",
-        "body": "4,250 failed 10MB downloads (17.2%). The 60s HTTPS timeout is too tight for 10MB files at ~600 Mb/s concurrency. Increasing to 120s is the recommended next step."
       },
       {
         "title": "Baseline Established — Two Fixes to Validate",
