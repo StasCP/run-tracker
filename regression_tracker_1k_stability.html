@@ -773,12 +773,13 @@ function bwCls(bw){ return bw >= BW_OK ? 'ok' : bw >= BW_WARN ? 'warn' : 'err'; 
 function connCls(r){ const p = r.connFail / AGENTS * 100; return p < 5 ? 'ok' : p < 20 ? 'warn' : 'err'; }
 function cellCls(bad){ return bad ? 'bad-cell' : ''; }
 
-// Downloads-failed status. Unlike the other parameters this has no absolute
-// "good" level, so a red state is driven by the regression flag (failure rate
-// rose more than REG_TH.dlfail pts vs the previous run); above 15% is amber.
+// Downloads-failed status. Failure rate is the exact inverse of download success,
+// so these bands mirror dlCls (>15% failed ⇔ <85% success, >2% ⇔ <98%) and the
+// row always agrees with the Download success % column badge. A regression flag
+// forces red as well, even when the absolute rate is still low.
 function dlFailCls(r){
-  if (r.dlFailReg) return 'err';
-  return r.dlFailRate > 15 ? 'warn' : 'ok';
+  if (r.dlFailReg || r.dlFailRate > 15) return 'err';
+  return r.dlFailRate > 2 ? 'warn' : 'ok';
 }
 
 const STATUS_ICON = { ok: '✓', warn: '⚠', err: '✗' };
@@ -792,8 +793,9 @@ function paramStatuses(r){
   return [
     { name: 'Batch success',       metric: 'batch',      cls: batchCls(r.batch), val: r.batch.toFixed(1) + '%' },
     { name: 'Connection failures', metric: 'conn',       cls: connCls(r),        val: fmt(r.connFail) },
+    // Download success % is the inverse of the failure rate, so only the failure
+    // view is listed here — both still have their own table columns.
     { name: 'Downloads failed',    metric: 'dl',         cls: dlFailCls(r),      val: `${fmt(r.dlFail)} (${r.dlFailRate.toFixed(1)}%)` },
-    { name: 'Download success',    metric: 'dl',         cls: dlCls(r.dlRate),   val: r.dlRate.toFixed(1) + '%' },
     { name: 'Peak throughput',     metric: 'throughput', cls: bwCls(r.bw),       val: fmt(r.bw) + ' Mb/s' },
   ];
 }
