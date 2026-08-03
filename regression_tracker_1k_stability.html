@@ -206,7 +206,7 @@
   .tip-hit .tip-title { color: #ff9b9b; }
   .tip-body { color: #b9b6ae; font-size: 12px; margin-top: 2px; }
 
-  /* Always-visible per-parameter status panel in the FINDINGS column. Three
+  /* Always-visible per-parameter status panel in the Status & Findings column. Three
      columns: icon, parameter name, value. Colour comes from each parameter's
      own threshold helper, so it matches that parameter's table badge. */
   .param-status {
@@ -314,7 +314,7 @@
         <th data-key="dlrate">Download<br>success %<span class="arr">↕</span></th>
         <th data-key="bw">Peak<br>throughput<span class="arr">↕</span></th>
         <th class="txt">Regression</th>
-        <th class="txt">Findings</th>
+        <th class="txt">Status &amp; Findings</th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -775,7 +775,7 @@ function dlFailCls(r){
 
 const STATUS_ICON = { ok: '✓', warn: '⚠', err: '✗' };
 
-// Per-parameter status rows for the FINDINGS column, in table-column order.
+// Per-parameter status rows for the Status & Findings column, in table-column order.
 // Duration and Downloads-succeeded are intentionally excluded: neither has a
 // pass/fail threshold, so an icon would assert a verdict we can't support.
 // `metric` is the RUN_ERRORS.byMetric bucket whose root cause explains this
