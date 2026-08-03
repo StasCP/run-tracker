@@ -27,6 +27,11 @@
     --err:       #9b1c1c;
     --err-bg:    #fde8e8;
     --reg-bg:    #fff0f0;
+    /* Status tints for the dark #rc-tip panel — same hues as --ok/--warn/--err,
+       lightened so they read against a near-black background. */
+    --tip-ok:    #7ddba3;
+    --tip-warn:  #f5c463;
+    --tip-err:   #ff9b9b;
     --baseline-bg:   #f0eeea;
     --baseline-border: #c8c6bc;
     --mono:      "JetBrains Mono", "Fira Mono", "Consolas", monospace;
@@ -200,6 +205,10 @@
     pointer-events: none;   /* never intercept the cursor / block interaction */
   }
   .tip-head { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #9a978f; margin-bottom: 8px; }
+  /* Status-panel tooltips colour the subject line to match the row's icon. */
+  .tip-head.tip-ok   { color: var(--tip-ok);   }
+  .tip-head.tip-warn { color: var(--tip-warn); }
+  .tip-head.tip-err  { color: var(--tip-err);  }
   .tip-item { margin-bottom: 10px; font-size: 13px; line-height: 1.45; }
   .tip-item:last-child { margin-bottom: 0; }
   .tip-title { font-weight: 600; color: #fff; }
@@ -846,7 +855,7 @@ function statusPanel(r){
           (c.body ? `<div class="tip-body">${esc(c.body)}</div>` : '') + `</div>`).join('')
       : `<div class="tip-item"><div class="tip-body">No root cause recorded.</div></div>`;
     const tip = `<span class="tip-data" hidden>` +
-                  `<div class="tip-head">${esc(p.name)} — ${esc(p.val)}</div>${items}` +
+                  `<div class="tip-head tip-${p.cls}">${esc(p.name)} — ${esc(p.val)}</div>${items}` +
                 `</span>`;
     return `<div class="ps-item has-tip">${head}${tip}</div>`;
   });
