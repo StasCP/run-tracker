@@ -381,7 +381,7 @@ const rawRuns = [
     focus:"1K stability run 3",
     dur:22.0, batch:51.4, connFail:0,
     dlOk:85777, dlFail:2198, bw:300,
-    notes:"Low batch success 51.4% — AWS issue, no logs to confirm the reason. Connection Plane — Perfect 100% Two Runs Running · Batch Success Collapse — Down 25.8pp from Run 2 · Sharp Late-Run Decline, Not a Dip · Throughput cutoff — ~300 Mb/s peak decayed to ~90–100 Mb/s by h10, then collapsed toward full unresponsiveness (60s timeouts) by the ~10.5h mark"
+    notes:"Low batch success 51.4% — AWS issue, no logs to confirm the reason. Connection Plane — Perfect 100% Two Runs Running · Batch Success Collapse — Down 25.8pp from Run 2 · Sharp Late-Run Decline, Not a Dip"
   },
   {
     date:"2026-07-03", ord:1, net:"u6on3HPusz",
@@ -536,7 +536,7 @@ const RUN_ERRORS = {
       },
       "throughput": {
         "title": "Sharp Late-Run Decline, Not a Dip",
-        "body": "Throughput declines sharply through the reviewed window, trending toward full unresponsiveness by the ~10.5-hour mark. Run 2's degraded state was still a stable 45–65 Mb/s band; Run 3 shows the file server heading toward complete unresponsiveness rather than merely struggling under load."
+        "body": "Throughput declines sharply through the reviewed window, trending toward full unresponsiveness by the ~10.5-hour mark. Run 2's degraded state was still a stable 45–65 Mb/s band; Run 3 shows the file server heading toward complete unresponsiveness rather than merely struggling under load. Quantified: the ~300 Mb/s peak decayed to ~90–100 Mb/s by hour 10, then collapsed toward full unresponsiveness (60s timeouts) by the ~10.5h mark."
       },
       "batch": {
         "title": "Batch Success Collapse — Down 25.8pp from Run 2",
@@ -802,6 +802,16 @@ function paramStatuses(r){
 
 // Condensed root-cause caption for a failing parameter. Full text stays in the
 // root-cause list below the panel and in the hover tooltip.
+// The generic "AWS issue" stand-in for an un-investigated low batch result. It
+// describes the batch parameter, so the panel discloses it under Batch success
+// instead of listing it separately below.
+function batchPlaceholder(r){
+  const investigated = !!(r.errors && r.errors.byMetric && r.errors.byMetric.batch
+                          && r.errors.byMetric.batch.investigated);
+  if (batchCls(r.batch) !== 'err' || investigated) return '';
+  return `Low batch success ${r.batch.toFixed(1)}% — AWS issue, no logs to confirm the reason`;
+}
+
 function causeFor(r, metric){
   const c = r.errors && r.errors.byMetric && r.errors.byMetric[metric];
   return c && c.title ? c.title.trim() : '';
@@ -814,19 +824,23 @@ function causeFor(r, metric){
 // attached once per panel — to the first non-healthy parameter that maps to it.
 function panelRows(r){
   const claimed = new Set();
+  const add = (list, t) => { if (t && !claimed.has(t)) { claimed.add(t); list.push(t); } };
   return paramStatuses(r).map(p => {
-    const expandable = p.cls === 'warn' || p.cls === 'err';
-    let cause = '';
-    if (expandable) {
-      const full = causeFor(r, p.metric);
-      if (full && !claimed.has(full)) { claimed.add(full); cause = full; }
-    }
-    return Object.assign({}, p, { expandable, cause });
+    const causes = [];
+    add(causes, causeFor(r, p.metric));
+    if (p.metric === 'batch') add(causes, batchPlaceholder(r));
+    // Warning/failing parameters always expand, since their value matters. Healthy
+    // ones expand only when a finding is recorded against them — that way every
+    // recorded finding sits inside its own parameter instead of in a separate list.
+    const expandable = p.cls !== 'ok' || causes.length > 0;
+    return Object.assign({}, p, { expandable, causes });
   });
 }
 
 function panelCauseTitles(r){
-  return new Set(panelRows(r).filter(x => x.cause).map(x => x.cause));
+  const s = new Set();
+  panelRows(r).forEach(x => x.causes.forEach(c => s.add(c)));
+  return s;
 }
 
 function statusPanel(r){
@@ -837,8 +851,9 @@ function statusPanel(r){
       return `<div class="ps-item ps-static">${head}</div>`;
     }
     const detail = `<div class="ps-val ps-${p.cls}">${esc(p.val)}</div>` +
-      (p.cause ? `<div class="ps-cause">${esc(p.cause)}</div>`
-               : `<div class="ps-nocause">no root cause recorded</div>`);
+      (p.causes.length
+        ? p.causes.map(c => `<div class="ps-cause">${esc(c)}</div>`).join('')
+        : `<div class="ps-nocause">no root cause recorded</div>`);
     return `<details class="ps-item">` +
              `<summary class="ps-head">${head}</summary>` +
              `<div class="ps-detail">${detail}</div>` +
@@ -919,9 +934,8 @@ function rowHtml(r, isBase){
   const rc = rootCauses(r);
   const causes = rc.causes.slice();
   // Fallback AWS note only for a red-batch run whose cause was NOT investigated.
-  const batchInvestigated = !!(r.errors && r.errors.byMetric.batch && r.errors.byMetric.batch.investigated);
-  if (batchCls(r.batch) === 'err' && !batchInvestigated && !causes.some(c => /AWS issue/i.test(c.title)))
-    causes.push({ title: `Low batch success ${r.batch.toFixed(1)}% — AWS issue, no logs to confirm the reason` });
+  // The low-batch "AWS issue" note is no longer appended here — batchPlaceholder()
+  // routes it into the Batch success row of the status panel instead.
 
   const dateLabel = r.date.slice(5,10) + (r.ord > 1 ? `<span class="ord">run ${r.ord}</span>` : '');
   const baseTag = isBase ? '<span class="bl-pill">baseline</span>' : '';
@@ -932,11 +946,17 @@ function rowHtml(r, isBase){
   let findings = listCauses.length
     ? `<div class="findings">${listCauses.map(c => `<div class="rc-item">${esc(c.title)}</div>`).join('')}</div>`
     : '';
-  // With no report-matched root cause, also surface the run's notes (report
-  // findings such as a throughput cutoff); drop the AWS note already shown above.
+  // With no report-matched root cause, also surface the run's notes. Notes are a
+  // '·'-joined blob of report findings, so it is split and any fragment the panel
+  // already discloses is dropped — nothing appears both inside and outside a
+  // parameter. The leading AWS sentence goes too; it now lives under Batch success.
   if (!rc.causes.length && r.notes) {
-    const extra = r.notes.replace(/^Low batch success.*?no logs to confirm the reason\.?\s*/i, '').trim();
-    if (extra) findings += `<div class="notes-cell">${esc(extra)}</div>`;
+    const frags = r.notes
+      .replace(/^Low batch success.*?no logs to confirm the reason\.?\s*/i, '')
+      .split('·')
+      .map(s => s.trim())
+      .filter(s => s && ![...captioned].some(c => c === s || (s.length >= 20 && c.indexOf(s) !== -1)));
+    if (frags.length) findings += `<div class="notes-cell">${esc(frags.join(' · '))}</div>`;
   }
   // The per-parameter status panel is always shown; root causes / notes follow
   // it under a divider when there are any.
