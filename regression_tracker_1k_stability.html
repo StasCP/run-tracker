@@ -119,6 +119,7 @@
   colgroup col.c-dlfl  { width: 86px; }
   colgroup col.c-dlrt  { width: 90px; }
   colgroup col.c-bw    { width: 94px; }
+  colgroup col.c-bwavg { width: 94px; }
   colgroup col.c-reg   { width: 210px; }
   colgroup col.c-find  { width: 280px; }
 
@@ -310,7 +311,7 @@
     <colgroup>
       <col class="c-date"><col class="c-net"><col class="c-focus"><col class="c-dur">
       <col class="c-batch"><col class="c-conn"><col class="c-dlok"><col class="c-dlfl">
-      <col class="c-dlrt"><col class="c-bw"><col class="c-reg"><col class="c-find">
+      <col class="c-dlrt"><col class="c-bw"><col class="c-bwavg"><col class="c-reg"><col class="c-find">
     </colgroup>
     <thead>
       <tr>
@@ -324,6 +325,7 @@
         <th data-key="dlfl">Downloads<br>failed<span class="arr">↕</span></th>
         <th data-key="dlrate">Download<br>success %<span class="arr">↕</span></th>
         <th data-key="bw">Peak<br>throughput<span class="arr">↕</span></th>
+        <th data-key="bwavg">Avg<br>throughput<span class="arr">↕</span></th>
         <th class="txt">Regression<span class="th-hint">(hover to see root cause)</span></th>
         <th class="txt">Status &amp; Findings<span class="th-hint">(hover to see root cause)</span></th>
       </tr>
@@ -355,7 +357,7 @@ const rawRuns = [
     date:"2026-08-01", ord:1, net:"u6on3HPusz",
     focus:"1k stability run 8",
     dur:9.6, batch:80.8, connFail:52,
-    dlOk:21217, dlFail:5408, bw:60,
+    dlOk:21217, dlFail:5408, bw:60, bwAvg:48,
     notes:"Batch success 80.8% — partial recovery from Run 7's series-worst 62.7% (+18.1pp), still 15.4pp below Run 6's 96.2%. All 192 in-window failures attributable to EC2 Spot host preemption in exactly two 96-agent bursts (407 raw termination events on one job_id; 215 out-of-window excluded per scoping). Confirmed from logs. Batch Failure Structure Changes Shape Again — Two 96-Agent Bursts, Not Seven 48-Agent Bursts · Connection Clustering Confirmed — Corrects an Earlier \"No Clustering\" Read · Download Failure Reason Confirmed via Logs — 60.01s Timeout · Batch-Preemption / Connection-Disconnect Overlap Checked — Chance-Level, Not Compelling"
   },
   {
@@ -397,7 +399,7 @@ const rawRuns = [
     date:"2026-06-20", ord:1, net:"u6on3HPusz",
     focus:"1K stability run 1",
     dur:10.0, batch:77.2, connFail:1,
-    dlOk:25119, dlFail:9385, bw:95,
+    dlOk:25119, dlFail:9385, bw:95, bwAvg:55,
     notes:"Low batch success 77.2% — AWS issue, no logs to confirm the reason. WireGuard Connection Plane Clean at 1K · Root Cause: File Server Saturation — curl Timeout code=124 · Throughput Stable — No Collapse, But Insufficient"
   },
   {
@@ -929,6 +931,7 @@ const sortMap = {
   conn:   r => r.connFail,
   dlrate: r => r.dlRate,
   bw:     r => r.bw,
+  bwavg:  r => r.bwAvg == null ? -1 : r.bwAvg,
   dur:    r => r.dur,
   dlok:   r => r.dlOk,
   dlfl:   r => r.dlFail,
@@ -975,6 +978,7 @@ function rowHtml(r, isBase){
     <td class="num ${cellCls(r.dlFailReg)}">${fmt(r.dlFail)}</td>
     <td class="num ${cellCls(r.dlRateReg)}"><span class="badge ${dlCls(r.dlRate)}">${r.dlRate.toFixed(1)}%</span></td>
     <td class="num ${cellCls(r.bwReg)}"><span class="badge ${bwCls(r.bw)}">${fmt(r.bw)} Mb/s</span></td>
+    <td class="num">${r.bwAvg == null ? '<span class="ok-flag">—</span>' : `<span class="badge ${bwCls(r.bwAvg)}">${fmt(r.bwAvg)} Mb/s</span>`}</td>
     <td>${msgs.length
       ? `<span class="reg-flag${rc.causes.length ? ' has-tip' : ' no-tip'}">⚠ ${msgs.join(' · ')}${causeTooltip(rc)}</span>`
       : '<span class="ok-flag">—</span>'}</td>
@@ -1031,8 +1035,9 @@ const SERIES = [
   { key:'dlFail',    label:'Download failures',  color:'#e67e22', yAxis:'yCount', regKey:'dlFailReg'   },
   { key:'dlRate',    label:'Download success %', color:'#8e44ad', yAxis:'yPct',   regKey:'dlRateReg'   },
   { key:'bw',        label:'Peak throughput',    color:'#0097a7', yAxis:'yBw',    regKey:'bwReg'       },
+  { key:'bwAvg',     label:'Avg throughput',     color:'#4dd0e1', yAxis:'yBw',    regKey:'bwAvgReg', dash:[5,4] },
 ];
-const visibility = { batch:true, failCount:true, dlFail:true, dlRate:true, bw:true };
+const visibility = { batch:true, failCount:true, dlFail:true, dlRate:true, bw:true, bwAvg:true };
 
 const regressionPlugin = {
   id: 'regressionDots',
@@ -1063,6 +1068,7 @@ function buildDatasets(data){
     backgroundColor: s.color + '22',
     pointBackgroundColor: data.map(r => r[s.regKey] ? '#c0392b' : s.color),
     pointRadius: data.map(r => r[s.regKey] ? 7 : 4),
+    borderDash: s.dash || [],
     pointHoverRadius: 7, borderWidth: 2, tension: 0.3,
     yAxisID: s.yAxis, hidden: !visibility[s.key], fill: false,
   }));
@@ -1094,6 +1100,7 @@ function initChart(){
                 `DL failures:     ${r.dlFail.toLocaleString()}`,
                 `DL success:      ${r.dlRate.toFixed(1)}%`,
                 `Peak throughput: ${r.bw.toLocaleString()} Mb/s`,
+                `Avg throughput:  ${r.bwAvg == null ? '—' : r.bwAvg.toLocaleString()+' Mb/s'}`,
               ];
               const regs = regSummary(r);
               if (regs.length){ lines.push(''); regs.forEach(m => lines.push(`⚠ ${m}`)); }
