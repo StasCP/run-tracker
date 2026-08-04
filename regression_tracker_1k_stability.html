@@ -1037,7 +1037,7 @@ const SERIES = [
   { key:'bw',        label:'Peak throughput',    color:'#0097a7', yAxis:'yBw',    regKey:'bwReg'       },
   { key:'bwAvg',     label:'Avg throughput',     color:'#4dd0e1', yAxis:'yBw',    regKey:'bwAvgReg', dash:[5,4] },
 ];
-const visibility = { batch:true, failCount:true, dlFail:true, dlRate:true, bw:true, bwAvg:true };
+const visibility = { batch:true, failCount:true, dlFail:true, dlRate:true, bw:true, bwAvg:false };
 
 const regressionPlugin = {
   id: 'regressionDots',
@@ -1134,9 +1134,10 @@ function initChart(){
 function buildControls(){
   const wrap = document.getElementById('series-controls');
   SERIES.forEach(s => {
+    const on = visibility[s.key];
     const lbl = document.createElement('label');
-    lbl.className = 'cb-label active';
-    lbl.innerHTML = `<input type="checkbox" checked onchange="toggleSeries('${s.key}', this.checked)">
+    lbl.className = 'cb-label' + (on ? ' active' : '');
+    lbl.innerHTML = `<input type="checkbox" ${on ? 'checked' : ''} onchange="toggleSeries('${s.key}', this.checked)">
       <span class="cb-swatch" style="background:${s.color}"></span> ${s.label}`;
     wrap.appendChild(lbl);
   });
