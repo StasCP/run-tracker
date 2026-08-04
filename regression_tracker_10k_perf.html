@@ -119,6 +119,7 @@
   colgroup col.c-dlfl  { width: 86px; }
   colgroup col.c-dlrt  { width: 90px; }
   colgroup col.c-bw    { width: 94px; }
+  colgroup col.c-bwavg { width: 94px; }
   colgroup col.c-reg   { width: 210px; }
   colgroup col.c-find  { width: 280px; }
 
@@ -310,7 +311,7 @@
     <colgroup>
       <col class="c-date"><col class="c-net"><col class="c-focus"><col class="c-dur">
       <col class="c-batch"><col class="c-conn"><col class="c-dlok"><col class="c-dlfl">
-      <col class="c-dlrt"><col class="c-bw"><col class="c-reg"><col class="c-find">
+      <col class="c-dlrt"><col class="c-bw"><col class="c-bwavg"><col class="c-reg"><col class="c-find">
     </colgroup>
     <thead>
       <tr>
@@ -324,6 +325,7 @@
         <th data-key="dlfl">Downloads<br>failed<span class="arr">↕</span></th>
         <th data-key="dlrate">Download<br>success %<span class="arr">↕</span></th>
         <th data-key="bw">Peak<br>throughput<span class="arr">↕</span></th>
+        <th data-key="bwavg">Avg<br>throughput<span class="arr">↕</span></th>
         <th class="txt">Regression<span class="th-hint">(hover to see root cause)</span></th>
         <th class="txt">Status &amp; Findings<span class="th-hint">(hover to see root cause)</span></th>
       </tr>
@@ -362,35 +364,35 @@ const rawRuns = [
     date:"2026-05-13", ord:1, net:"r2Bp3KvAOL",
     focus:"Performance Report — Stability Test 4 Regions · Evening Run",
     dur:4.17, batch:67.5, connFail:899,
-    dlOk:152536, dlFail:1073, bw:850,
+    dlOk:152536, dlFail:1073, bw:850, bwAvg:450,
     notes:"Low batch success 67.5% — AWS issue, no logs to confirm the reason. Highest Peak Throughput Yet · Zero Login Failures · Strong Download-Layer Reliability"
   },
   {
     date:"2026-05-20", ord:1, net:"QaWL9HOEOx",
     focus:"Throughput test 3 — pre-fix baseline",
     dur:1.58, batch:94.6, connFail:1231,
-    dlOk:38175, dlFail:4250, bw:750,
+    dlOk:38175, dlFail:4250, bw:750, bwAvg:600,
     notes:"Pre-fix baseline (5→10MB downloads, post-FF). WireGuard IP pool exhaustion → 1,231 conn failures (12.3%). 60s HTTPS timeout → 10.0% DL failures. ~600 Mb/s sustained / 750 peak; all 8 tunnels active (Frankfurt 4 dominant). Two fixes to validate."
   },
   {
     date:"2026-05-20", ord:2, net:"QaWL9HOEOx",
     focus:"Throughput test 2 - post fix",
     dur:1.25, batch:82.8, connFail:1366,
-    dlOk:31180, dlFail:4902, bw:800,
+    dlOk:31180, dlFail:4902, bw:800, bwAvg:630,
     notes:"MQueue fix. Peak throughput +50 Mb/s (~630 Mb/s sustained). Connection failures worse."
   },
   {
     date:"2026-05-26", ord:1, net:"QaWL9HOEOx",
     focus:"MQueue fix validation",
     dur:1.583, batch:92.0, connFail:1460,
-    dlOk:24113, dlFail:4065, bw:750,
+    dlOk:24113, dlFail:4065, bw:750, bwAvg:550,
     notes:"System functional post-fix. Throughput consistent (~550 Mb/s sustained). Connection failures root cause identified — WireGuard handshake timeout."
   },
   {
     date:"2026-06-04", ord:1, net:"QaWL9HOEOx",
     focus:"Users per GW run",
     dur:1.5, batch:98.4, connFail:2865,
-    dlOk:22934, dlFail:7313, bw:580,
+    dlOk:22934, dlFail:7313, bw:580, bwAvg:400,
     notes:"Conn. duration 3,600s for clear users-per-GW reading. WireGuard IP pool exhaustion caused 29.1% conn failures. HTTPS 60s timeout caused 24.2% DL failures. Strong throughput on connected agents."
   },
   {
@@ -404,7 +406,7 @@ const rawRuns = [
     date:"2026-06-10", ord:1, net:"QaWL9HOEOx",
     focus:"Run with increased downloads",
     dur:3.0, batch:84.3, connFail:3788,
-    dlOk:36966, dlFail:3069, bw:600,
+    dlOk:36966, dlFail:3069, bw:600, bwAvg:402,
     notes:"Throughput ceiling unchanged at ~600 Mb/s. Bottleneck is not CPU or memory."
   },
   {
@@ -1150,6 +1152,7 @@ const sortMap = {
   conn:   r => r.connFail,
   dlrate: r => r.dlRate,
   bw:     r => r.bw,
+  bwavg:  r => r.bwAvg == null ? -1 : r.bwAvg,
   dur:    r => r.dur,
   dlok:   r => r.dlOk,
   dlfl:   r => r.dlFail,
@@ -1196,6 +1199,7 @@ function rowHtml(r, isBase){
     <td class="num ${cellCls(r.dlFailReg)}">${fmt(r.dlFail)}</td>
     <td class="num ${cellCls(r.dlRateReg)}"><span class="badge ${dlCls(r.dlRate)}">${r.dlRate.toFixed(1)}%</span></td>
     <td class="num ${cellCls(r.bwReg)}"><span class="badge ${bwCls(r.bw)}">${fmt(r.bw)} Mb/s</span></td>
+    <td class="num">${r.bwAvg == null ? '<span class="ok-flag">—</span>' : `<span class="badge ${bwCls(r.bwAvg)}">${fmt(r.bwAvg)} Mb/s</span>`}</td>
     <td>${msgs.length
       ? `<span class="reg-flag${rc.causes.length ? ' has-tip' : ' no-tip'}">⚠ ${msgs.join(' · ')}${causeTooltip(rc)}</span>`
       : '<span class="ok-flag">—</span>'}</td>
@@ -1252,8 +1256,9 @@ const SERIES = [
   { key:'dlFail',    label:'Download failures',  color:'#e67e22', yAxis:'yCount', regKey:'dlFailReg'   },
   { key:'dlRate',    label:'Download success %', color:'#8e44ad', yAxis:'yPct',   regKey:'dlRateReg'   },
   { key:'bw',        label:'Peak throughput',    color:'#0097a7', yAxis:'yBw',    regKey:'bwReg'       },
+  { key:'bwAvg',     label:'Avg throughput',     color:'#4dd0e1', yAxis:'yBw',    regKey:'bwAvgReg', dash:[5,4] },
 ];
-const visibility = { batch:true, failCount:true, dlFail:true, dlRate:true, bw:true };
+const visibility = { batch:true, failCount:true, dlFail:true, dlRate:true, bw:true, bwAvg:true };
 
 const regressionPlugin = {
   id: 'regressionDots',
@@ -1284,6 +1289,7 @@ function buildDatasets(data){
     backgroundColor: s.color + '22',
     pointBackgroundColor: data.map(r => r[s.regKey] ? '#c0392b' : s.color),
     pointRadius: data.map(r => r[s.regKey] ? 7 : 4),
+    borderDash: s.dash || [],
     pointHoverRadius: 7, borderWidth: 2, tension: 0.3,
     yAxisID: s.yAxis, hidden: !visibility[s.key], fill: false,
   }));
@@ -1315,6 +1321,7 @@ function initChart(){
                 `DL failures:     ${r.dlFail.toLocaleString()}`,
                 `DL success:      ${r.dlRate.toFixed(1)}%`,
                 `Peak throughput: ${r.bw.toLocaleString()} Mb/s`,
+                `Avg throughput:  ${r.bwAvg == null ? '—' : r.bwAvg.toLocaleString()+' Mb/s'}`,
               ];
               const regs = regSummary(r);
               if (regs.length){ lines.push(''); regs.forEach(m => lines.push(`⚠ ${m}`)); }
