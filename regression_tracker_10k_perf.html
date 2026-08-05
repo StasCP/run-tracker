@@ -833,20 +833,20 @@ const RUN_ERRORS = {
     "report": "report_newrun_10k_ab42be2c_8.html",
     "byMetric": {
       "conn": {
-        "title": "336 failures in two tight windows",
+        "title": "Two short failure windows",
         "body": "All 336 fall in 07:01–07:02 and 07:18–07:20, reconciling exactly to the dashboard. One CloudWatch sample at the first window's edge shows 6 of ~16 agent interfaces reporting status=unavailable — a lead only: single snapshot, no baseline, not yet reconciled to the full 336."
       },
       "dl": {
-        "title": "HTTPS command timeout — 84% of 11,927 failures",
+        "title": "HTTPS command timeout",
         "body": "11,927 failures across 5 HTTPS error types, summing exactly to the dashboard count. command-timeout alone is 10,023 (84%), consistent with the download-time chart's 60.01s ceiling. Caveat: that chart's last data point is ~07:54, about an hour before the run ends."
       },
       "batch": {
-        "title": "Batch best in series — 99.97%",
+        "title": "Best in series",
         "body": "9,997 of 10,000 succeeded. Of the 3 failures, 2 are spot-no-capacity and 1 is the known container-0 controller slot, a structural artifact rather than a real task failure.",
         "investigated": true
       },
       "throughput": {
-        "title": "Peak 1,140 Mb/s — matches series high",
+        "title": "Matches series high",
         "body": "Level with the strongest prior 10K result (1,150 Mb/s on Jun 25), so the download regression is not a throughput ceiling effect."
       }
     },
