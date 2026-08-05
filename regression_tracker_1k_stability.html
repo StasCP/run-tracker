@@ -727,16 +727,16 @@ const RUN_ERRORS = {
     "report": "stability_report_1k_run9_TIIy1ZI4cF-automated_5.html",
     "byMetric": {
       "conn": {
-        "title": "Connections perfect — 100%, 0 failed",
-        "body": "All connections succeeded on the migrated network (TIIy1ZI4cF). No connection-layer finding in this run's report; the auto-matched CSV panel-export block is unrelated to connection health."
+        "title": "Connections perfect — 0 failed",
+        "body": "All connections succeeded on the migrated network (TIIy1ZI4cF)."
       },
       "dl": {
-        "title": "Download Failure Reason Confirmed — Exact Match at 40",
-        "body": "A job-scoped log investigation confirms all 40 dashboard-reported failures as HTTPS command-timeout — an exact match, same pattern as Run 8's confirmed-reason approach."
+        "title": "All 40 download failures were HTTPS timeouts",
+        "body": "A job-scoped log check confirmed exactly 40 command-timeout failures, matching the dashboard."
       },
       "batch": {
-        "title": "Batch Falls to a New Series-Worst — 61.8%, Reasons Reconciled Exactly",
-        "body": "618/1,000 succeeded, 382 failed (61.8%) — down 19.0pp from Run 8's 80.8% and below Run 7's previous series-worst of 62.7%. A CloudWatch reason breakdown splits all 382 as spot-no-capacity (~315) + host-terminated-lookup-failed (~67) = 382 exactly. This run also switched to smaller batch instance types alongside the AWS account/network migration — plausible context for the spot-no-capacity spike (smaller instance types generally see more Spot interruption), but not confirmed as the cause; no direct comparison to Run 8's instance sizing is available.",
+        "title": "Spot capacity ran out — 315 of 382 failures",
+        "body": "382 of 1,000 jobs failed: ~315 spot-no-capacity + ~67 host-terminated-lookup-failed, reconciling to 382 exactly from CloudWatch. New series worst, down 19.0pp from Run 8. Smaller batch instance types this run are plausible context, not a confirmed cause.",
         "investigated": true
       }
     },
