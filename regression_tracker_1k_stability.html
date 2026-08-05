@@ -354,6 +354,13 @@ const BW_OK = 100, BW_WARN = 60;
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const rawRuns = [
   {
+    date:"2026-08-05", ord:1, net:"TIIy1ZI4cF",
+    focus:"1k stability run 9",
+    dur:6.63, batch:61.8, connFail:0,
+    dlOk:53128, dlFail:40, bw:445, bwAvg:92,
+    notes:"Batch success 61.8% — new series worst, down 19.0pp from Run 8's 80.8% and below Run 7's previous worst of 62.7%. 618 of 1,000 succeeded, 382 failed. A CloudWatch reason breakdown accounts for all 382 exactly: ~315 spot-no-capacity + ~67 host-terminated-lookup-failed. This run also moved to a new AWS account (u6on3HPusz → TIIy1ZI4cF, \"NFT\") and switched to smaller batch instance types — plausible context for the spot-no-capacity spike, but not confirmed as the cause and no Run 8 instance-sizing comparison is available. Caveat: the single spot-no-capacity log sample timestamps ~07:15 UTC, ~5.5h after the run ended (~01:47 UTC); the aggregate 315/67 split is untimestamped and unaffected. Batch Falls to a New Series-Worst — 61.8%, Reasons Reconciled Exactly · Network Migrated Mid-Series — u6on3HPusz → TIIy1ZI4cF · Download Failure Reason Confirmed — Exact Match at 40"
+  },
+  {
     date:"2026-08-01", ord:1, net:"u6on3HPusz",
     focus:"1k stability run 8",
     dur:9.6, batch:80.8, connFail:52,
@@ -715,13 +722,65 @@ const RUN_ERRORS = {
         "body": "Run 7's 373 failures were dominated by seven 48-agent dense-packing bursts across 7 distinct hosts. Run 8's 192 in-window failures come from exactly two hosts, each losing 96 agents. Same general risk (large simultaneous single-host losses from co-located agent packing), different specific shape run to run — worth investigating whether the underlying instance-packing configuration is stable or drifting."
       }
     ]
+  },
+  "2026-08-05|1": {
+    "report": "stability_report_1k_run9_TIIy1ZI4cF-automated_5.html",
+    "byMetric": {
+      "conn": {
+        "title": "Connections perfect — 100%, 0 failed",
+        "body": "All connections succeeded on the migrated network (TIIy1ZI4cF). No connection-layer finding in this run's report; the auto-matched CSV panel-export block is unrelated to connection health."
+      },
+      "dl": {
+        "title": "Download Failure Reason Confirmed — Exact Match at 40",
+        "body": "A job-scoped log investigation confirms all 40 dashboard-reported failures as HTTPS command-timeout — an exact match, same pattern as Run 8's confirmed-reason approach."
+      },
+      "batch": {
+        "title": "Batch Falls to a New Series-Worst — 61.8%, Reasons Reconciled Exactly",
+        "body": "618/1,000 succeeded, 382 failed (61.8%) — down 19.0pp from Run 8's 80.8% and below Run 7's previous series-worst of 62.7%. A CloudWatch reason breakdown splits all 382 as spot-no-capacity (~315) + host-terminated-lookup-failed (~67) = 382 exactly. This run also switched to smaller batch instance types alongside the AWS account/network migration — plausible context for the spot-no-capacity spike (smaller instance types generally see more Spot interruption), but not confirmed as the cause; no direct comparison to Run 8's instance sizing is available.",
+        "investigated": true
+      }
+    },
+    "all": [
+      {
+        "title": "Batch Falls to a New Series-Worst — 61.8%, Reasons Reconciled Exactly",
+        "body": "618/1,000 succeeded, 382 failed (61.8%) — down 19.0pp from Run 8's 80.8% and below Run 7's previous series-worst of 62.7%. A CloudWatch reason breakdown splits all 382 as spot-no-capacity (~315) + host-terminated-lookup-failed (~67) = 382 exactly. This run also switched to smaller batch instance types alongside the AWS account/network migration — plausible context for the spot-no-capacity spike (smaller instance types generally see more Spot interruption), but not confirmed as the cause; no direct comparison to Run 8's instance sizing is available."
+      },
+      {
+        "title": "Network Migrated Mid-Series — u6on3HPusz → TIIy1ZI4cF",
+        "body": "Confirmed as a genuine infrastructure move to a new AWS account (\"NFT\"), not cross-tenant contamination. Same solo tenant, same topology, same agent count. File server now resolves at 10.0.0.171 rather than the prior 10.0.0.202."
+      },
+      {
+        "title": "Download Failure Reason Confirmed — Exact Match at 40",
+        "body": "A job-scoped log investigation confirms all 40 dashboard-reported failures as HTTPS command-timeout — an exact match, same pattern as Run 8's confirmed-reason approach."
+      },
+      {
+        "title": "Panel-Level Export Diverges Sharply From Headline Tiles — Excluded, Not Reconciled",
+        "body": "The accompanying CSV's raw per-panel counts (232 logins / 113 connections / 118 downloads / peak 62 connected) are roughly 45–100x lower than the headline tiles and cover only the ~3-minute explicit window. Per explicit direction, headline tiles are the source of truth and CSV figures are excluded from this report — the size of the divergence is recorded here rather than silently dropped."
+      },
+      {
+        "title": "Download Failure Reason: Resolved via Job-Scoped Follow-Up",
+        "body": "A job-scoped log investigation confirms exactly 40 command-timeout failures, matching the dashboard."
+      },
+      {
+        "title": "One Batch Sample's Timestamp Falls Outside Run Window",
+        "body": "The single spot-no-capacity sample (job ab42be2c-...:2089) timestamps to ~07:15 UTC on 2026-08-05 — about 5.5 hours after the run's end (~01:47 UTC). This affects only that one log line; the aggregate 315/67 reason split (which reconciles exactly to 382) carries no timestamps and isn't implicated by this gap."
+      },
+      {
+        "title": "CSV Panel Data Excluded",
+        "body": "Raw per-panel counts (232 logins / 113 connections / 118 downloads / peak 62 connected) diverge ~45–100x from headline tiles and cover only the ~3-minute explicit window. Excluded from all figures in this report per explicit direction."
+      },
+      {
+        "title": "Network Migration Confirmed",
+        "body": "u6on3HPusz → TIIy1ZI4cF, new AWS account (\"NFT\"), same solo tenant and topology. File server now at 10.0.0.171 (previously 10.0.0.202). Confirmed as this run's genuine data, not cross-tenant contamination."
+      }
+    ]
   }
 };
 // ─── end RUN_ERRORS ───
 
 // Per-run report-PDF links (run key -> Confluence attachment preview URL) —
 // filled by build_combined.py from report_urls.json.
-const REPORT_URLS = {"2026-06-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965963124%2Fstability_report_1k_run2_u6on3HPusz_6.pdf", "2026-06-27|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965242769%2Fstability_report_1k_run3_u6on3HPusz_8.pdf", "2026-07-03|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2964161638%2Fstability_report_1k_run4_u6on3HPusz_5.pdf", "2026-07-02|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2972680202%2Fstability_report_1k_run3_u6on3HPusz_14.pdf", "2026-07-15|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3014067090%2Fstability_report_1k_run5_u6on3HPusz_1.pdf", "2026-07-18|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3025551288%2Fstability_report_1k_run6_u6on3HPusz-automated_4.pdf", "2026-07-24|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3060957755%2Fstability_report_1k_run7_u6on3HPusz-automated_1.pdf", "2026-08-01|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3097660664%2Fstability_report_1k_run8_u6on3HPusz-automated_1.pdf"};
+const REPORT_URLS = {"2026-06-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965963124%2Fstability_report_1k_run2_u6on3HPusz_6.pdf", "2026-06-27|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965242769%2Fstability_report_1k_run3_u6on3HPusz_8.pdf", "2026-07-03|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2964161638%2Fstability_report_1k_run4_u6on3HPusz_5.pdf", "2026-07-02|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2972680202%2Fstability_report_1k_run3_u6on3HPusz_14.pdf", "2026-07-15|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3014067090%2Fstability_report_1k_run5_u6on3HPusz_1.pdf", "2026-07-18|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3025551288%2Fstability_report_1k_run6_u6on3HPusz-automated_4.pdf", "2026-07-24|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3060957755%2Fstability_report_1k_run7_u6on3HPusz-automated_1.pdf", "2026-08-01|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3097660664%2Fstability_report_1k_run8_u6on3HPusz-automated_1.pdf", "2026-08-05|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3115941996%2Fstability_report_1k_run9_TIIy1ZI4cF-automated_5.pdf"};
 
 // ─── Enrichment (chronological — regression is vs previous run) ────────────────
 function key(r){ return r.date + '|' + r.ord; }
