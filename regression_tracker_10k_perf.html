@@ -354,6 +354,13 @@ const BW_OK = 1000, BW_WARN = 600;
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const rawRuns = [
   {
+    date:"2026-08-05", ord:1, net:"ilouAk9ODs",
+    focus:"Download timeouts dominant",
+    dur:2.45, batch:99.97, connFail:336,
+    dlOk:36305, dlFail:11927, bw:1140,
+    notes:"Downloads 75.3% — the run's only regression, down from 98.5% on Jun 25. All 11,927 failures reconcile to the dashboard; 84% (10,023) are HTTPS command-timeout at the 60.01s ceiling. Conn failures improved to 336, in two tight windows (07:01–07:02, 07:18–07:20); status=unavailable on 6 of ~16 interfaces is a one-snapshot lead, not yet reconciled to all 336. Batch best in series at 99.97% (2 spot-no-capacity + 1 structural container-0 slot). Peak 1,140 Mb/s matches the series high. Caveat: download-time series ends ~07:54, ~1h before the run ends."
+  },
+  {
     date:"2026-04-13", ord:1, net:"ToVsBVTd4L",
     focus:"10k 4-region 64-GW baseline (new config)",
     dur:6.5, batch:99.55, connFail:362,
@@ -822,6 +829,46 @@ const RUN_ERRORS = {
       }
     ]
   },
+  "2026-08-05|1": {
+    "report": "report_newrun_10k_ab42be2c_8.html",
+    "byMetric": {
+      "conn": {
+        "title": "336 failures in two tight windows",
+        "body": "All 336 fall in 07:01–07:02 and 07:18–07:20, reconciling exactly to the dashboard. One CloudWatch sample at the first window's edge shows 6 of ~16 agent interfaces reporting status=unavailable — a lead only: single snapshot, no baseline, not yet reconciled to the full 336."
+      },
+      "dl": {
+        "title": "HTTPS command timeout — 84% of 11,927 failures",
+        "body": "11,927 failures across 5 HTTPS error types, summing exactly to the dashboard count. command-timeout alone is 10,023 (84%), consistent with the download-time chart's 60.01s ceiling. Caveat: that chart's last data point is ~07:54, about an hour before the run ends."
+      },
+      "batch": {
+        "title": "Batch best in series — 99.97%",
+        "body": "9,997 of 10,000 succeeded. Of the 3 failures, 2 are spot-no-capacity and 1 is the known container-0 controller slot, a structural artifact rather than a real task failure.",
+        "investigated": true
+      },
+      "throughput": {
+        "title": "Peak 1,140 Mb/s — matches series high",
+        "body": "Level with the strongest prior 10K result (1,150 Mb/s on Jun 25), so the download regression is not a throughput ceiling effect."
+      }
+    },
+    "all": [
+      {
+        "title": "Download Failures Reconcile Exactly — Command-Timeout Dominant",
+        "body": "11,927 failures split across 5 HTTPS error types, summing exactly to the dashboard's count. command-timeout alone accounts for 84% (10,023) — the download-time chart's 60.01s ceiling is consistent with a timeout-driven mechanism."
+      },
+      {
+        "title": "Connection Failures: status=unavailable Signal Identified, Not Yet Fully Quantified",
+        "body": "336 failures fall into exactly two windows (07:01–07:02 and 07:18–07:20), reconciling exactly to the dashboard. A CloudWatch sample at the edge of the first window shows 6 of ~16 agent interfaces reporting status=unavailable — a real lead, but based on one snapshot with no baseline comparison and no reconciliation to the full failure count yet."
+      },
+      {
+        "title": "Batch: 99.97% Success",
+        "body": "9,997/10,000 succeeded (3 failed) — a strong result. 2 of the 3 failures are spot-no-capacity; the third is the known container-0 controller slot, which always fails as a structural artifact and isn't a real task failure."
+      },
+      {
+        "title": "Download-Time Series Ends Early",
+        "body": "The download-time chart's last data point is ~07:54, while the run continues to 08:58 — roughly an hour of the run has no download-time data."
+      }
+    ]
+  },
   "2026-05-20|2": {
     "report": "(manual)",
     "byMetric": {
@@ -942,7 +989,7 @@ const RUN_ERRORS = {
 
 // Per-run report-PDF links (run key -> Confluence attachment preview URL) —
 // filled by build_combined.py from report_urls.json.
-const REPORT_URLS = {"2026-05-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964390954%2Fthroughput%20test%20baseline%20pre%20fix%2020_05.pdf", "2026-05-26|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964063520%2Fstability_report_throughput_test3_QaWL9HOEOx_7.pdf", "2026-06-04|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964718471%2Fstability_report_10k_run1_QaWL9HOEOx_6.pdf", "2026-06-08|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963801473%2Fstability_report_10k_run7_QaWL9HOEOx_3.pdf", "2026-06-10|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964620340%2Fstability_report_10k_run8_6.pdf", "2026-06-23|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-23|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-25|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2966224907%2Freport_Cjbex1Pj7a_june25_run_7.pdf", "2026-05-20|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965242816%2Fstability_report_throughput_comparison_QaWL9HOEOx.pdf", "2026-05-13|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963704054%2Fstability_report_4region_10k_evening_8.pdf", "2026-04-13|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2970452636%2Fstability_report_4region_10k_baseline_%2013_4.pdf"};
+const REPORT_URLS = {"2026-05-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964390954%2Fthroughput%20test%20baseline%20pre%20fix%2020_05.pdf", "2026-05-26|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964063520%2Fstability_report_throughput_test3_QaWL9HOEOx_7.pdf", "2026-06-04|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964718471%2Fstability_report_10k_run1_QaWL9HOEOx_6.pdf", "2026-06-08|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963801473%2Fstability_report_10k_run7_QaWL9HOEOx_3.pdf", "2026-06-10|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964620340%2Fstability_report_10k_run8_6.pdf", "2026-06-23|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-23|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-25|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2966224907%2Freport_Cjbex1Pj7a_june25_run_7.pdf", "2026-05-20|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965242816%2Fstability_report_throughput_comparison_QaWL9HOEOx.pdf", "2026-05-13|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963704054%2Fstability_report_4region_10k_evening_8.pdf", "2026-04-13|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2970452636%2Fstability_report_4region_10k_baseline_%2013_4.pdf", "2026-08-05|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F3118268777%2Freport_newrun_10k_ab42be2c_8.pdf"};
 
 // ─── Enrichment (chronological — regression is vs previous run) ────────────────
 function key(r){ return r.date + '|' + r.ord; }
