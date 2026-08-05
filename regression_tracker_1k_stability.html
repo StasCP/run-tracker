@@ -727,15 +727,15 @@ const RUN_ERRORS = {
     "report": "stability_report_1k_run9_TIIy1ZI4cF-automated_5.html",
     "byMetric": {
       "conn": {
-        "title": "Connections perfect — 0 failed",
+        "title": "No failures",
         "body": "All connections succeeded on the migrated network (TIIy1ZI4cF)."
       },
       "dl": {
-        "title": "All 40 download failures were HTTPS timeouts",
+        "title": "HTTPS timeouts",
         "body": "A job-scoped log check confirmed exactly 40 command-timeout failures, matching the dashboard."
       },
       "batch": {
-        "title": "Spot capacity ran out — 315 of 382 failures",
+        "title": "AWS Spot capacity ran out",
         "body": "382 of 1,000 jobs failed: ~315 spot-no-capacity + ~67 host-terminated-lookup-failed, reconciling to 382 exactly from CloudWatch. New series worst, down 19.0pp from Run 8. Smaller batch instance types this run are plausible context, not a confirmed cause.",
         "investigated": true
       }
