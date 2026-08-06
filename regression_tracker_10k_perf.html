@@ -354,6 +354,13 @@ const BW_OK = 1000, BW_WARN = 600;
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const rawRuns = [
   {
+    date:"2026-08-06", ord:1, net:"ilouAk9ODs",
+    focus:"Avg throughput scoped to download window",
+    dur:2.53, batch:96.04, connFail:432,
+    dlOk:36422, dlFail:10182, bw:1160, bwAvg:540,
+    notes:"Avg throughput this run is scoped to the active download duration, not the full run window — 540 Mb/s is therefore NOT comparable to earlier runs' averages. Peak 1,160 Mb/s is a new series high. Downloads 78.2% remain the main issue: 10,182 failures, 83.8% (8,531) HTTPS command-timeout; a job-scoped 2,000-event log sample shows SSL handshake failures carry their own ~21.2s timeout, a distinct mechanism from the ~60s command-timeout ceiling. Conn failures 432 in two windows 17 min apart (335 dense at 11:28–11:30, 97 isolated at 11:47) — no shared cause established, no CloudWatch investigation yet. Batch 96.04%: 365 of 396 failures reason-explained (229 host-terminated-lookup-failed + 136 spot-no-capacity), remaining 31 the known always-fails carrier container; mix reversed vs Aug 5 — lookup-failed now dominant at 63% where spot-no-capacity led before."
+  },
+  {
     date:"2026-08-05", ord:1, net:"ilouAk9ODs",
     focus:"Download timeouts dominant",
     dur:2.45, batch:99.97, connFail:336,
@@ -869,6 +876,46 @@ const RUN_ERRORS = {
       }
     ]
   },
+  "2026-08-06|1": {
+    "report": "report_newrun2_10k_383d7828_6.html",
+    "byMetric": {
+      "conn": {
+        "title": "Two failure windows",
+        "body": "432 failures split 335 in a dense 3-minute cluster (11:28–11:30) and 97 as an isolated spike at 11:47, 17 minutes later. No shared cause has been established between the two, and no CloudWatch investigation has been done for this run's connection failures yet."
+      },
+      "dl": {
+        "title": "HTTPS command timeout",
+        "body": "10,182 failures across 4 HTTPS error types; command-timeout alone is 8,531 (83.8%). A job-scoped 2,000-event raw-log sample shows SSL handshake failures carry their own consistent ~21.2s timeout — a distinct mechanism from the ~60s command-timeout ceiling, not a variant of it."
+      },
+      "batch": {
+        "title": "Host lookup failures now dominant",
+        "body": "9,604 of 10,000 succeeded (396 failed). 365 trace to the reason-breakdown panel — 229 host-terminated-lookup-failed + 136 spot-no-capacity — and the remaining 31 are a single always-fails carrier container, known and expected. The mix reversed vs the prior run on the same network: lookup-failed is now dominant at 63%, where spot-no-capacity led before.",
+        "investigated": true
+      },
+      "throughput": {
+        "title": "New series-high peak",
+        "body": "Peak 1,160 Mb/s beats the prior series high (1,150 Mb/s). Caveat unique to this run: the 540 Mb/s average is scoped to the active download duration rather than the full run window, so it is not directly comparable to the averages recorded for earlier runs."
+      }
+    },
+    "all": [
+      {
+        "title": "Connection Failures: Two Distinct Windows, 17 Minutes Apart",
+        "body": "335 failures land in a dense 3-minute cluster (11:28–11:30); 97 more appear as an isolated spike at 11:47, 17 minutes later. No shared cause has been established between the two."
+      },
+      {
+        "title": "Download Failures — Command-Timeout Dominant",
+        "body": "10,182 failures split across 4 HTTPS error types. command-timeout alone accounts for 83.8% (8,531). A raw-log sample (2,000 events, job-scoped) confirms SSL handshake failures have their own consistent ~21.2s timeout — a distinct mechanism from the ~60s command-timeout ceiling, not just a variant of it."
+      },
+      {
+        "title": "Connection Failures — Two Distinct Windows",
+        "body": "432 failures split 335 (11:28–11:30, dense) + 97 (11:47, isolated). No CloudWatch investigation has been done for this run's connection failures yet."
+      },
+      {
+        "title": "Batch: 96.04% Success",
+        "body": "9,604/10,000 succeeded (396 failed). 365 of those trace to the reason-breakdown panel (229 host-terminated-lookup-failed + 136 spot-no-capacity); the remaining 31 come from a single always-fails carrier container, a known and expected behavior. This run's failure mix also reversed vs. the prior run (ab42be2c, same network): lookup-failed is now dominant (63%) where spot-no-capacity was dominant before (~82%)."
+      }
+    ]
+  },
   "2026-05-20|2": {
     "report": "(manual)",
     "byMetric": {
@@ -989,7 +1036,7 @@ const RUN_ERRORS = {
 
 // Per-run report-PDF links (run key -> Confluence attachment preview URL) —
 // filled by build_combined.py from report_urls.json.
-const REPORT_URLS = {"2026-05-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964390954%2Fthroughput%20test%20baseline%20pre%20fix%2020_05.pdf", "2026-05-26|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964063520%2Fstability_report_throughput_test3_QaWL9HOEOx_7.pdf", "2026-06-04|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964718471%2Fstability_report_10k_run1_QaWL9HOEOx_6.pdf", "2026-06-08|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963801473%2Fstability_report_10k_run7_QaWL9HOEOx_3.pdf", "2026-06-10|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964620340%2Fstability_report_10k_run8_6.pdf", "2026-06-23|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-23|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-25|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2966224907%2Freport_Cjbex1Pj7a_june25_run_7.pdf", "2026-05-20|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965242816%2Fstability_report_throughput_comparison_QaWL9HOEOx.pdf", "2026-05-13|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963704054%2Fstability_report_4region_10k_evening_8.pdf", "2026-04-13|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2970452636%2Fstability_report_4region_10k_baseline_%2013_4.pdf", "2026-08-05|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F3118268777%2Freport_newrun_10k_ab42be2c_8.pdf"};
+const REPORT_URLS = {"2026-05-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964390954%2Fthroughput%20test%20baseline%20pre%20fix%2020_05.pdf", "2026-05-26|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964063520%2Fstability_report_throughput_test3_QaWL9HOEOx_7.pdf", "2026-06-04|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964718471%2Fstability_report_10k_run1_QaWL9HOEOx_6.pdf", "2026-06-08|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963801473%2Fstability_report_10k_run7_QaWL9HOEOx_3.pdf", "2026-06-10|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964620340%2Fstability_report_10k_run8_6.pdf", "2026-06-23|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-23|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-25|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2966224907%2Freport_Cjbex1Pj7a_june25_run_7.pdf", "2026-05-20|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965242816%2Fstability_report_throughput_comparison_QaWL9HOEOx.pdf", "2026-05-13|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963704054%2Fstability_report_4region_10k_evening_8.pdf", "2026-04-13|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2970452636%2Fstability_report_4region_10k_baseline_%2013_4.pdf", "2026-08-05|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F3118268777%2Freport_newrun_10k_ab42be2c_8.pdf", "2026-08-06|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F3121153518%2Freport_newrun2_10k_383d7828_6.pdf"};
 
 // ─── Enrichment (chronological — regression is vs previous run) ────────────────
 function key(r){ return r.date + '|' + r.ord; }
