@@ -1088,6 +1088,12 @@ const REPORT_URLS = {"2026-05-20|1": "https://perimeter81.atlassian.net/wiki/pag
 // ─── Enrichment (chronological — regression is vs previous run) ────────────────
 function key(r){ return r.date + '|' + r.ord; }
 
+// Attempts to divide connection failures by. Runs that loop connect/disconnect
+// make more attempts than they have agents (2 loops x 10K = 19,998), so a rate
+// over AGENTS would overstate them. Rows record `connAttempts` when they differ;
+// without it, one connection per agent is assumed.
+function connDenom(r){ return r.connAttempts || AGENTS; }
+
 const runs = rawRuns.slice()
   .sort((a,b) => (a.date + String(a.ord).padStart(2,'0')) > (b.date + String(b.ord).padStart(2,'0')) ? 1 : -1)
   .map((r, i, arr) => {
@@ -1104,8 +1110,8 @@ const runs = rawRuns.slice()
     const dlRateDelta = prevDlRate !== null ? +(dlRate - prevDlRate).toFixed(1) : null;
     const dlRateReg   = dlRateDelta !== null && dlRateDelta < -REG_TH.dl;
 
-    const connFailRate      = +(failCount / AGENTS * 100).toFixed(1);
-    const prevConnFailRate  = prev ? +(prev.connFail / AGENTS * 100).toFixed(1) : null;
+    const connFailRate      = +(failCount / connDenom(r) * 100).toFixed(1);
+    const prevConnFailRate  = prev ? +(prev.connFail / connDenom(prev) * 100).toFixed(1) : null;
     const connFailRateDelta = prevConnFailRate !== null ? +(connFailRate - prevConnFailRate).toFixed(1) : null;
     const connFailReg       = connFailRateDelta !== null && connFailRateDelta > REG_TH.conn;
 
@@ -1137,7 +1143,7 @@ function fmt(n){ return n.toLocaleString('en-US'); }
 function batchCls(b){ return b >= 98 ? 'ok' : b >= 85 ? 'warn' : 'err'; }
 function dlCls(d){ return d >= 98 ? 'ok' : d >= 85 ? 'warn' : 'err'; }
 function bwCls(bw){ return bw >= BW_OK ? 'ok' : bw >= BW_WARN ? 'warn' : 'err'; }
-function connCls(r){ const p = r.connFail / AGENTS * 100; return p < 5 ? 'ok' : p < 20 ? 'warn' : 'err'; }
+function connCls(r){ const p = r.connFail / connDenom(r) * 100; return p < 5 ? 'ok' : p < 20 ? 'warn' : 'err'; }
 function cellCls(bad){ return bad ? 'bad-cell' : ''; }
 
 // Downloads-failed status. Failure rate is the exact inverse of download success,
