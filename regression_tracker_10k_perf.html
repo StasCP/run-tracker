@@ -354,6 +354,13 @@ const BW_OK = 1000, BW_WARN = 600;
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const rawRuns = [
   {
+    date:"2026-08-17", ord:1, net:"ilouAk9ODs",
+    focus:"WireGuard run, downloads fully clean",
+    dur:3.07, batch:99.49, connFail:946,
+    dlOk:95025, dlFail:0, bw:1150, bwAvg:580,
+    notes:"First WireGuard run at 10K, same network as Aug 6. Downloads fully clean — all 95,025 5MB HTTPS transfers succeeded, zero failures, no reason breakdown needed. Logins 100% (19,998). Conn failures 946 (95.3%), all inside four short windows (08:15–08:16, 08:31–08:34, 09:25–09:26, 09:43–09:44); CloudWatch gives a single root cause, timeout at 100%, with elapsed connection time clustering at ~600–601s — no per-agent index or region data to explain which windows were hit. Peak 1,150 Mb/s, avg 580 Mb/s, peak concurrent 9,961 (99.61% of target). Batch: the report did not pull job-level child-job counts (infra-level Lambda metric only: 51 host-terminated events, all spot-no-capacity), so the 99.5% here is from the run owner's count of 9,949 succeeded / 51 failed."
+  },
+  {
     date:"2026-08-06", ord:1, net:"ilouAk9ODs",
     focus:"Avg throughput scoped to download window",
     dur:2.53, batch:96.04, connFail:432,
@@ -916,6 +923,46 @@ const RUN_ERRORS = {
       }
     ]
   },
+  "2026-08-17|1": {
+    "report": "load-test-report-85ed182d-wireguard-exacttemplate_3.html",
+    "byMetric": {
+      "conn": {
+        "title": "Timeouts in four windows",
+        "body": "946 failures (95.3% success), all landing inside four brief windows — 08:15–08:16, 08:31–08:34, 09:25–09:26, 09:43–09:44 — rather than persisting through the run. CloudWatch confirms a single root cause: timeout, 100% of failures, with elapsed connection time clustering at ~600–601s. No per-agent index or region data is available to explain why these particular windows were affected."
+      },
+      "dl": {
+        "title": "No failures",
+        "body": "All 95,025 5MB HTTPS downloads succeeded — zero failures across the full run, the first fully clean download result in the series. No reason breakdown or raw-log investigation was needed."
+      },
+      "throughput": {
+        "title": "Near-full cohort at peak",
+        "body": "Peak 1,150 Mb/s with a 580 Mb/s average, and peak concurrent connected users of 9,961 — 99.61% of the 10,000-agent target. Consistent with a healthy, high-utilization run."
+      },
+      "batch": {
+        "title": "Spot capacity reclaims",
+        "body": "51 host-terminated events, 100% spot-no-capacity — one consistent reason, no mix of failure types. Note: this run's report did not pull job-level child-job counts, only the infra-level Batch Failure Lambda metric, so the 99.5% recorded here comes from the run owner's count of 9,949 succeeded / 51 failed out of 10,000 rather than from the report.",
+        "investigated": true
+      }
+    },
+    "all": [
+      {
+        "title": "Connection Failures: Four Short Windows",
+        "body": "All 946 failures land inside four brief windows (08:15–08:16, 08:31–08:34, 09:25–09:26, 09:43–09:44) rather than persisting through the run. CloudWatch confirms a single root cause — timeout (100% of failures), with elapsed connection time clustering at ~600–601s. No per-agent index or region data is available to explain why these particular windows were affected."
+      },
+      {
+        "title": "Downloads: Fully Clean",
+        "body": "All 95,025 5MB HTTPS downloads succeeded, with zero failures across the full run. No reason breakdown or raw-log investigation was needed."
+      },
+      {
+        "title": "Infra: Light Footprint, One Reason",
+        "body": "51 host-terminated events, 100% spot-no-capacity — a single, consistent reason with no mix of failure types. Job-level batch success rate not confirmed this run (see Batch Failure Reason)."
+      },
+      {
+        "title": "Throughput & Concurrency: Near-Full Cohort",
+        "body": "Peak concurrent connected users reached 9,961 (99.61% of the 10,000-agent target), with peak combined throughput of 1,150 Mb/s — both consistent with a healthy, high-utilization run."
+      }
+    ]
+  },
   "2026-05-20|2": {
     "report": "(manual)",
     "byMetric": {
@@ -1036,7 +1083,7 @@ const RUN_ERRORS = {
 
 // Per-run report-PDF links (run key -> Confluence attachment preview URL) —
 // filled by build_combined.py from report_urls.json.
-const REPORT_URLS = {"2026-05-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964390954%2Fthroughput%20test%20baseline%20pre%20fix%2020_05.pdf", "2026-05-26|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964063520%2Fstability_report_throughput_test3_QaWL9HOEOx_7.pdf", "2026-06-04|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964718471%2Fstability_report_10k_run1_QaWL9HOEOx_6.pdf", "2026-06-08|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963801473%2Fstability_report_10k_run7_QaWL9HOEOx_3.pdf", "2026-06-10|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964620340%2Fstability_report_10k_run8_6.pdf", "2026-06-23|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-23|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-25|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2966224907%2Freport_Cjbex1Pj7a_june25_run_7.pdf", "2026-05-20|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965242816%2Fstability_report_throughput_comparison_QaWL9HOEOx.pdf", "2026-05-13|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963704054%2Fstability_report_4region_10k_evening_8.pdf", "2026-04-13|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2970452636%2Fstability_report_4region_10k_baseline_%2013_4.pdf", "2026-08-05|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F3118268777%2Freport_newrun_10k_ab42be2c_8.pdf", "2026-08-06|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F3121153518%2Freport_newrun2_10k_383d7828_6.pdf"};
+const REPORT_URLS = {"2026-05-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964390954%2Fthroughput%20test%20baseline%20pre%20fix%2020_05.pdf", "2026-05-26|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964063520%2Fstability_report_throughput_test3_QaWL9HOEOx_7.pdf", "2026-06-04|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964718471%2Fstability_report_10k_run1_QaWL9HOEOx_6.pdf", "2026-06-08|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963801473%2Fstability_report_10k_run7_QaWL9HOEOx_3.pdf", "2026-06-10|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2964620340%2Fstability_report_10k_run8_6.pdf", "2026-06-23|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-23|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965471925%2Freport_Cjbex1Pj7a_run1_run2_june23_4.pdf", "2026-06-25|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2966224907%2Freport_Cjbex1Pj7a_june25_run_7.pdf", "2026-05-20|2": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2965242816%2Fstability_report_throughput_comparison_QaWL9HOEOx.pdf", "2026-05-13|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2963704054%2Fstability_report_4region_10k_evening_8.pdf", "2026-04-13|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F2970452636%2Fstability_report_4region_10k_baseline_%2013_4.pdf", "2026-08-05|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F3118268777%2Freport_newrun_10k_ab42be2c_8.pdf", "2026-08-06|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F3121153518%2Freport_newrun2_10k_383d7828_6.pdf", "2026-08-17|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2938077289&preview=%2F2938077289%2F3176400489%2Fload-test-report-85ed182d-wireguard-exacttemplate_3.pdf"};
 
 // ─── Enrichment (chronological — regression is vs previous run) ────────────────
 function key(r){ return r.date + '|' + r.ord; }
