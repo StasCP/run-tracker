@@ -363,14 +363,14 @@ const rawRuns = [
   {
     date:"2026-08-06", ord:1, net:"ilouAk9ODs",
     focus:"Avg throughput scoped to download window",
-    dur:2.53, batch:96.04, connFail:432,
+    dur:2.53, batch:96.04, connFail:432, connAttempts:9829,
     dlOk:36422, dlFail:10182, bw:1160, bwAvg:540,
     notes:"Avg throughput this run is scoped to the active download duration, not the full run window — 540 Mb/s is therefore NOT comparable to earlier runs' averages. Peak 1,160 Mb/s is a new series high. Downloads 78.2% remain the main issue: 10,182 failures, 83.8% (8,531) HTTPS command-timeout; a job-scoped 2,000-event log sample shows SSL handshake failures carry their own ~21.2s timeout, a distinct mechanism from the ~60s command-timeout ceiling. Conn failures 432 in two windows 17 min apart (335 dense at 11:28–11:30, 97 isolated at 11:47) — no shared cause established, no CloudWatch investigation yet. Batch 96.04%: 365 of 396 failures reason-explained (229 host-terminated-lookup-failed + 136 spot-no-capacity), remaining 31 the known always-fails carrier container; mix reversed vs Aug 5 — lookup-failed now dominant at 63% where spot-no-capacity led before."
   },
   {
     date:"2026-08-05", ord:1, net:"ilouAk9ODs",
     focus:"Download timeouts dominant",
-    dur:2.45, batch:99.97, connFail:336,
+    dur:2.45, batch:99.97, connFail:336, connAttempts:9999,
     dlOk:36305, dlFail:11927, bw:1140, bwAvg:330,
     notes:"Downloads 75.3% — the run's only regression, down from 98.5% on Jun 25. All 11,927 failures reconcile to the dashboard; 84% (10,023) are HTTPS command-timeout at the 60.01s ceiling. Conn failures improved to 336, in two tight windows (07:01–07:02, 07:18–07:20); status=unavailable on 6 of ~16 interfaces is a one-snapshot lead, not yet reconciled to all 336. Batch best in series at 99.97% (2 spot-no-capacity + 1 structural container-0 slot). Peak 1,140 Mb/s matches the series high, avg 330 Mb/s. Caveat: download-time series ends ~07:54, ~1h before the run ends."
   },
@@ -384,14 +384,14 @@ const rawRuns = [
   {
     date:"2026-05-13", ord:1, net:"r2Bp3KvAOL",
     focus:"Performance Report — Stability Test 4 Regions · Evening Run",
-    dur:4.17, batch:67.5, connFail:899,
+    dur:4.17, batch:67.5, connFail:899, connAttempts:32575,
     dlOk:152536, dlFail:1073, bw:850, bwAvg:450,
     notes:"Low batch success 67.5% — AWS issue, no logs to confirm the reason. Highest Peak Throughput Yet · Zero Login Failures · Strong Download-Layer Reliability"
   },
   {
     date:"2026-05-20", ord:1, net:"QaWL9HOEOx",
     focus:"Throughput test 3 — pre-fix baseline",
-    dur:1.58, batch:94.6, connFail:1231,
+    dur:1.58, batch:94.6, connFail:1231, connAttempts:10695,
     dlOk:38175, dlFail:4250, bw:750, bwAvg:600,
     notes:"Pre-fix baseline (5→10MB downloads, post-FF). WireGuard IP pool exhaustion → 1,231 conn failures (12.3%). 60s HTTPS timeout → 10.0% DL failures. ~600 Mb/s sustained / 750 peak; all 8 tunnels active (Frankfurt 4 dominant). Two fixes to validate."
   },
@@ -412,42 +412,42 @@ const rawRuns = [
   {
     date:"2026-06-04", ord:1, net:"QaWL9HOEOx",
     focus:"Users per GW run",
-    dur:1.5, batch:98.4, connFail:2865,
+    dur:1.5, batch:98.4, connFail:2865, connAttempts:9838,
     dlOk:22934, dlFail:7313, bw:580, bwAvg:400,
     notes:"Conn. duration 3,600s for clear users-per-GW reading. WireGuard IP pool exhaustion caused 29.1% conn failures. HTTPS 60s timeout caused 24.2% DL failures. Strong throughput on connected agents."
   },
   {
     date:"2026-06-08", ord:1, net:"QaWL9HOEOx",
     focus:"Multiple users per GW readings",
-    dur:2.2, batch:99.4, connFail:3394,
+    dur:2.2, batch:99.4, connFail:3394, connAttempts:9980,
     dlOk:23625, dlFail:2087, bw:600,
     notes:"GW cap 253 soft ceiling. 1 GW outlier (415 users) self-corrected. Conn. & DL failures under investigation. Tunnel metrics inconsistency under investigation."
   },
   {
     date:"2026-06-10", ord:1, net:"QaWL9HOEOx",
     focus:"Run with increased downloads",
-    dur:3.0, batch:84.3, connFail:3788,
+    dur:3.0, batch:84.3, connFail:3788, connAttempts:9808,
     dlOk:36966, dlFail:3069, bw:600, bwAvg:402,
     notes:"Throughput ceiling unchanged at ~600 Mb/s. Bottleneck is not CPU or memory."
   },
   {
     date:"2026-06-23", ord:1, net:"Cjbex1Pj7a",
     focus:"Load sharing examination",
-    dur:1.9, batch:99.4, connFail:5443,
+    dur:1.9, batch:99.4, connFail:5443, connAttempts:9937,
     dlOk:8830, dlFail:4567, bw:300,
     notes:"ECMP imbalance — primary blocker. 3 failure modes: tunnel timeout, RTNETLINK black hole, DL timeout. Only 19/64 gateways loaded. Capacity at 29%."
   },
   {
     date:"2026-06-23", ord:2, net:"Cjbex1Pj7a",
     focus:"Load sharing improvement",
-    dur:2.067, batch:98.1, connFail:199,
+    dur:2.067, batch:98.1, connFail:199, connAttempts:9881,
     dlOk:48269, dlFail:98, bw:1250,
     notes:"Spontaneous recovery, no config change. All 8 tunnels active. ECMP 6:1."
   },
   {
     date:"2026-06-25", ord:1, net:"Cjbex1Pj7a",
     focus:"Edge data analysis included",
-    dur:2.1, batch:96.4, connFail:514,
+    dur:2.1, batch:96.4, connFail:514, connAttempts:9821,
     dlOk:44717, dlFail:674, bw:1150,
     notes:"ECMP ~6:1, T103 dominant. Edge infra confirmed via Datadog."
   },
