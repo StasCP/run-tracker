@@ -356,70 +356,70 @@ const rawRuns = [
   {
     date:"2026-08-22", ord:1, net:"096f4b2b",
     focus:"1k stability run 10",
-    dur:13.72, batch:79.3, connFail:223,
+    dur:13.72, batch:79.3, connFail:223, connAttempts:27519,
     dlOk:135743, dlFail:21, bw:413, bwAvg:117,
     notes:"Batch success 79.3% — up +17.5pp from Run 9's series-worst 61.8%, still 1.5pp below Run 8's 80.8%. 793 of 1,000 succeeded, 207 failed, and 100% of the failures are host-terminated: spot-no-capacity — an AWS issue (Spot capacity), the same failure mode as Run 9 where it covered only ~82%. Batch compute is confirmed unchanged from Run 9 (same smaller instance types), so the mode is stable and only the severity moves run to run. Connections regressed from Run 9's clean 100% to 99.19%: all 223 failures reconcile exactly to six non-zero buckets inside the first ~2h (08:50 ×36, 08:51 ×27, 09:23 ×2, 09:24 ×61, 10:17 ×51, 10:42 ×46 UTC) with none over the remaining ~11.5h — an early-run/warm-up window, not a sustained fault. Downloads improved to 99.98% (135,743/135,764) with all 21 failures confirmed HTTPS command-timeout, an exact match. Also flagged in the report: avg download time regressed to 40.98s with 60.01s-ceiling hits spread across the whole run (Run 9 was a ~15–35s band with early plateaus), plus a single 55.58s max_connection_seconds outlier at 20:23 UTC. Caveat: 13h43m vs Run 9's ~6h38m — not a like-for-like window. Batch: Same Failure Mode as Run 9, Better Rate · Connection Failures Cluster Early, Then Vanish · Download Failure Reason: Confirmed, Exact Match · Single Outlier in Connection Time · Single File Server, Dual Region"
   },
   {
     date:"2026-08-05", ord:1, net:"TIIy1ZI4cF",
     focus:"1k stability run 9",
-    dur:6.63, batch:61.8, connFail:0,
+    dur:6.63, batch:61.8, connFail:0, connAttempts:10673,
     dlOk:53128, dlFail:40, bw:445, bwAvg:92,
     notes:"Batch success 61.8% — new series worst, down 19.0pp from Run 8's 80.8% and below Run 7's previous worst of 62.7%. 618 of 1,000 succeeded, 382 failed. A CloudWatch reason breakdown accounts for all 382 exactly: ~315 spot-no-capacity + ~67 host-terminated-lookup-failed. This run also moved to a new AWS account (u6on3HPusz → TIIy1ZI4cF, \"NFT\") and switched to smaller batch instance types — plausible context for the spot-no-capacity spike, but not confirmed as the cause and no Run 8 instance-sizing comparison is available. Caveat: the single spot-no-capacity log sample timestamps ~07:15 UTC, ~5.5h after the run ended (~01:47 UTC); the aggregate 315/67 split is untimestamped and unaffected. Batch Falls to a New Series-Worst — 61.8%, Reasons Reconciled Exactly · Network Migrated Mid-Series — u6on3HPusz → TIIy1ZI4cF · Download Failure Reason Confirmed — Exact Match at 40"
   },
   {
     date:"2026-08-01", ord:1, net:"u6on3HPusz",
     focus:"1k stability run 8",
-    dur:9.6, batch:80.8, connFail:52,
+    dur:9.6, batch:80.8, connFail:52, connAttempts:10382,
     dlOk:21217, dlFail:5408, bw:60, bwAvg:48,
     notes:"Batch success 80.8% — partial recovery from Run 7's series-worst 62.7% (+18.1pp), still 15.4pp below Run 6's 96.2%. All 192 in-window failures attributable to EC2 Spot host preemption in exactly two 96-agent bursts (407 raw termination events on one job_id; 215 out-of-window excluded per scoping). Confirmed from logs. Batch Failure Structure Changes Shape Again — Two 96-Agent Bursts, Not Seven 48-Agent Bursts · Connection Clustering Confirmed — Corrects an Earlier \"No Clustering\" Read · Download Failure Reason Confirmed via Logs — 60.01s Timeout · Batch-Preemption / Connection-Disconnect Overlap Checked — Chance-Level, Not Compelling"
   },
   {
     date:"2026-07-24", ord:1, net:"u6on3HPusz",
     focus:"1k stability run 7",
-    dur:12.17, batch:62.7, connFail:1,
+    dur:12.17, batch:62.7, connFail:1, connAttempts:12639,
     dlOk:28783, dlFail:6636, bw:88,
     notes:"Batch success 62.7% — series worst, down 33.5pp from Run 6's 96.2%. 373 of 1,000 array jobs failed; 336 (90.1%) came from 7 burst events each terminating exactly 48 co-located agents on a single Spot host (13:19, 14:14, 14:19 ×2, 15:50, 16:03, 16:59 UTC), three of them inside a 5-minute span that removed 144 agents at once. The remaining 37 were isolated single-agent losses across 37 distinct hosts. Confirmed from logs — the raw array-job status export holds exactly 373 unique indices, an exact match to the dashboard with no volume gap. Caveat: 10 of the 373 are timestamped 1.5–2.5h before the run window started. Batch Failures Structured Around Dense Host Packing — New This Run · Batch Reconciliation — Exact Match, No Volume Gap · Time-Range Scoping — Recurring From Run 6, Now 5× Larger"
   },
   {
     date:"2026-07-18", ord:1, net:"u6on3HPusz",
     focus:"1k stability run 6",
-    dur:13.33, batch:96.2, connFail:62,
+    dur:13.33, batch:96.2, connFail:62, connAttempts:15552,
     dlOk:37048, dlFail:7886, bw:95,
     notes:"Batch Reconciliation — Run 4's Open Question Finally Closed · Time-Range Scoping Flag — 2 of 38 Batch Failures Pre-Date the Run Window · Spot Terminations Concentrated on 2 Hosts, High Array-Index Range"
   },
   {
     date:"2026-07-15", ord:1, net:"u6on3HPusz",
     focus:"1k stability run 5",
-    dur:10.58, batch:32.7, connFail:17,
+    dur:10.58, batch:32.7, connFail:17, connAttempts:7519,
     dlOk:19323, dlFail:8266, bw:120,
     notes:"Batch success 32.7% — 673/1,000 batch jobs failed, 100% attributable to EC2 Spot capacity reclamation (spot-no-capacity host terminations, 9 clusters, 11:51–15:19 UTC). Confirmed from logs. Imported from report."
   },
   {
     date:"2026-07-02", ord:1, net:"u6on3HPusz",
     focus:"1K stability run 3",
-    dur:22.0, batch:51.4, connFail:0,
+    dur:22.0, batch:51.4, connFail:0, connAttempts:18122,
     dlOk:85777, dlFail:2198, bw:300,
     notes:"Low batch success 51.4% — AWS issue, no logs to confirm the reason. Connection Plane — Perfect 100% Two Runs Running · Batch Success Collapse — Down 25.8pp from Run 2 · Sharp Late-Run Decline, Not a Dip"
   },
   {
     date:"2026-07-03", ord:1, net:"u6on3HPusz",
     focus:"1K stability run 4",
-    dur:16.58, batch:100.0, connFail:0,
+    dur:16.58, batch:100.0, connFail:0, connAttempts:24974,
     dlOk:46907, dlFail:19877, bw:68,
     notes:"Connection Plane — Perfect 100% Two Runs Running · Confirmed: Routing Failures on 191 Agents (19.1%) · Batch vs. Download Divergence — Still Unreconciled"
   },
   {
     date:"2026-06-20", ord:1, net:"u6on3HPusz",
     focus:"1K stability run 1",
-    dur:10.0, batch:77.2, connFail:1,
+    dur:10.0, batch:77.2, connFail:1, connAttempts:10330,
     dlOk:25119, dlFail:9385, bw:95, bwAvg:55,
     notes:"Low batch success 77.2% — AWS issue, no logs to confirm the reason. WireGuard Connection Plane Clean at 1K · Root Cause: File Server Saturation — curl Timeout code=124 · Throughput Stable — No Collapse, But Insufficient"
   },
   {
     date:"2026-06-27", ord:1, net:"u6on3HPusz",
     focus:"1K stability run 2",
-    dur:12.37, batch:89.1, connFail:0,
+    dur:12.37, batch:89.1, connFail:0, connAttempts:15914,
     dlOk:60521, dlFail:5741, bw:100,
     notes:"Connection Plane — Perfect 100% for First Time · Progressive Throughput Degradation After ~18:00 · 5MB File Size Reduces Server Pressure — +18.5pp Downloads"
   },
