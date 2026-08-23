@@ -354,6 +354,13 @@ const BW_OK = 100, BW_WARN = 60;
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const rawRuns = [
   {
+    date:"2026-08-22", ord:1, net:"096f4b2b",
+    focus:"1k stability run 10",
+    dur:13.72, batch:79.3, connFail:223,
+    dlOk:135743, dlFail:21, bw:413, bwAvg:117,
+    notes:"Batch success 79.3% — up +17.5pp from Run 9's series-worst 61.8%, still 1.5pp below Run 8's 80.8%. 793 of 1,000 succeeded, 207 failed, and 100% of the failures are host-terminated: spot-no-capacity — an AWS issue (Spot capacity), the same failure mode as Run 9 where it covered only ~82%. Batch compute is confirmed unchanged from Run 9 (same smaller instance types), so the mode is stable and only the severity moves run to run. Connections regressed from Run 9's clean 100% to 99.19%: all 223 failures reconcile exactly to six non-zero buckets inside the first ~2h (08:50 ×36, 08:51 ×27, 09:23 ×2, 09:24 ×61, 10:17 ×51, 10:42 ×46 UTC) with none over the remaining ~11.5h — an early-run/warm-up window, not a sustained fault. Downloads improved to 99.98% (135,743/135,764) with all 21 failures confirmed HTTPS command-timeout, an exact match. Also flagged in the report: avg download time regressed to 40.98s with 60.01s-ceiling hits spread across the whole run (Run 9 was a ~15–35s band with early plateaus), plus a single 55.58s max_connection_seconds outlier at 20:23 UTC. Caveat: 13h43m vs Run 9's ~6h38m — not a like-for-like window. Batch: Same Failure Mode as Run 9, Better Rate · Connection Failures Cluster Early, Then Vanish · Download Failure Reason: Confirmed, Exact Match · Single Outlier in Connection Time · Single File Server, Dual Region"
+  },
+  {
     date:"2026-08-05", ord:1, net:"TIIy1ZI4cF",
     focus:"1k stability run 9",
     dur:6.63, batch:61.8, connFail:0,
@@ -774,13 +781,55 @@ const RUN_ERRORS = {
         "body": "u6on3HPusz → TIIy1ZI4cF, new AWS account (\"NFT\"), same solo tenant and topology. File server now at 10.0.0.171 (previously 10.0.0.202). Confirmed as this run's genuine data, not cross-tenant contamination."
       }
     ]
+  },
+  "2026-08-22|1": {
+    "report": "stability_report_1k_run10_096f4b2b-automated_6.html",
+    "byMetric": {
+      "conn": {
+        "title": "Early-run instability window",
+        "body": "223 failures, all inside the first two hours in six short bursts (08:50, 08:51, 09:23, 09:24, 10:17, 10:42 UTC), then none across the remaining ~11.5 hours. The buckets reconcile exactly to the dashboard total. Reads as a startup/warm-up window rather than a sustained fault; the trigger is still unconfirmed.",
+        "investigated": true
+      },
+      "dl": {
+        "title": "HTTPS timeouts",
+        "body": "The failure-reason table lists a single row — HTTPS command-timeout, 21 — an exact match to the dashboard. Downloads improved to 99.98%. Separately, average download time regressed to 40.98s with 60.01s-ceiling hits spread across the whole run.",
+        "investigated": true
+      },
+      "batch": {
+        "title": "AWS Spot capacity ran out",
+        "body": "207 of 1,000 jobs failed, all host-terminated: spot-no-capacity — the same failure mode as Run 9, now 100% of failures instead of ~82%. Success recovered +17.5pp to 79.3%, still 1.5pp below Run 8. Batch compute confirmed unchanged from Run 9, so the mode is fixed and only the severity moves run to run.",
+        "investigated": true
+      }
+    },
+    "all": [
+      {
+        "title": "Download Failure Reason: Confirmed, Exact Match",
+        "body": "The Download Failures by Reason & Protocol table lists exactly one row — HTTPS / command-timeout / 21 — an exact match to the dashboard's 21 failed downloads. Same clean-attribution pattern as Run 9."
+      },
+      {
+        "title": "Connection Failures Cluster Early, Then Vanish",
+        "body": "The Failed Network Connection Events chart has only 6 non-zero buckets in the entire 13h43m run — 08:50 (36), 08:51 (27), 09:23 (2), 09:24 (61), 10:17 (51), 10:42 (46) — summing to exactly 223, the dashboard's total. No failures appear after 10:42 UTC, pointing to an early-run instability window rather than an ongoing issue."
+      },
+      {
+        "title": "Batch: Same Failure Mode as Run 9, Better Rate",
+        "body": "793/1,000 batch jobs succeeded (79.3%), with all 207 failures attributed to host-terminated: spot-no-capacity — the identical failure mode behind Run 9's series-worst batch collapse (61.8% success). The rate recovered by +17.5pp, but the underlying cause didn't change, and now accounts for 100% of failures rather than ~82%."
+      },
+      {
+        "title": "Single Outlier in Connection Time",
+        "body": "max_connection_seconds averages 1.81s across the run, but one sample at 20:23 UTC spikes to 55.58s — over 30x the next-highest sample (1.54s). This reads as an isolated event rather than a systemic slowdown, but is flagged since it sits close to the download-time timeout ceiling."
+      },
+      {
+        "title": "Single File Server, Dual Region",
+        "body": "100% of the 27,165 resource-selection events routed to 10.0.0.171 — the same file-server IP and same Chicago + Frankfurt 1 dual-region topology as Run 9."
+      }
+    ]
   }
 };
 // ─── end RUN_ERRORS ───
 
 // Per-run report-PDF links (run key -> Confluence attachment preview URL) —
 // filled by build_combined.py from report_urls.json.
-const REPORT_URLS = {"2026-06-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965963124%2Fstability_report_1k_run2_u6on3HPusz_6.pdf", "2026-06-27|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965242769%2Fstability_report_1k_run3_u6on3HPusz_8.pdf", "2026-07-03|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2964161638%2Fstability_report_1k_run4_u6on3HPusz_5.pdf", "2026-07-02|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2972680202%2Fstability_report_1k_run3_u6on3HPusz_14.pdf", "2026-07-15|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3014067090%2Fstability_report_1k_run5_u6on3HPusz_1.pdf", "2026-07-18|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3025551288%2Fstability_report_1k_run6_u6on3HPusz-automated_4.pdf", "2026-07-24|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3060957755%2Fstability_report_1k_run7_u6on3HPusz-automated_1.pdf", "2026-08-01|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3097660664%2Fstability_report_1k_run8_u6on3HPusz-automated_1.pdf", "2026-08-05|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3115941996%2Fstability_report_1k_run9_TIIy1ZI4cF-automated_5.pdf"};
+const REPORT_URLS = {"2026-06-20|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965963124%2Fstability_report_1k_run2_u6on3HPusz_6.pdf", "2026-06-27|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2965242769%2Fstability_report_1k_run3_u6on3HPusz_8.pdf", "2026-07-03|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2964161638%2Fstability_report_1k_run4_u6on3HPusz_5.pdf", "2026-07-02|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F2972680202%2Fstability_report_1k_run3_u6on3HPusz_14.pdf", "2026-07-15|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3014067090%2Fstability_report_1k_run5_u6on3HPusz_1.pdf", "2026-07-18|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3025551288%2Fstability_report_1k_run6_u6on3HPusz-automated_4.pdf", "2026-07-24|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3060957755%2Fstability_report_1k_run7_u6on3HPusz-automated_1.pdf", "2026-08-01|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3097660664%2Fstability_report_1k_run8_u6on3HPusz-automated_1.pdf", "2026-08-05|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3115941996%2Fstability_report_1k_run9_TIIy1ZI4cF-automated_5.pdf", "2026-08-22|1": "https://perimeter81.atlassian.net/wiki/pages/viewpageattachments.action?pageId=2944270554&preview=%2F2944270554%2F3207529408%2Fstability_report_1k_run10_096f4b2b-automated_6.pdf"};
 
 // ─── Enrichment (chronological — regression is vs previous run) ────────────────
 function key(r){ return r.date + '|' + r.ord; }
