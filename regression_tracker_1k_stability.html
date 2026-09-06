@@ -889,12 +889,12 @@ const RUN_ERRORS = {
         "investigated": true
       },
       "dl": {
-        "title": "Network reachability errors",
+        "title": "Minor network reachability errors",
         "body": "541 failures against Run 11's 56, taking downloads from 99.95% to 99.58%. All 541 reconcile exactly to the reason table, but the composition inverts: 459 connection-timed-out and 60 no-route-to-host against only 22 command-timeout, where Run 11 was 55 command-timeout out of 56. Both dominant errors are reachability verdicts rather than the slow-server signature seen across the series. AWS was ruled out — the carrying tunnel held 156 consecutive five-minute samples with zero DOWN states and uninterrupted data flow, and the file server showed 8.7% CPU, no event-log errors, no TCP/IP events and no connection ceiling. Cause sits on the SASE path or the agents; unconfirmed.",
         "investigated": true
       },
       "throughput": {
-        "title": "Improved on every axis",
+        "title": "Minor improvement on every axis",
         "body": "Peak 419 Mb/s against Run 11's 400, sustained average 110 Mb/s against 102, and 624.02 GB moved against 575.19 GB, on a peak of 941 concurrent agents. Average download time is essentially unchanged at ~30.5s versus Run 11's 30.1s.",
         "investigated": true
       },
